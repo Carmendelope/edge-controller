@@ -1,0 +1,6 @@
+bazel-*
+*.swp
+*.idea
+bin/*
+vendor
+vendor/*
