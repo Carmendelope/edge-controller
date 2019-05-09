@@ -193,6 +193,7 @@ func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.
 			return derrors.NewAlreadyExistsError("operation result already registered").WithParams(op.OperationId)
 		}
 
+		// add pending operation
 		if err := bk.Put(key, toAddBytes); err != nil {
 			return derrors.NewInternalError("Cannot registry operation result")
 		}
@@ -223,6 +224,7 @@ func (b *BboltAssetProvider) GetPendingOpResponses(removeEntries bool)([]entitie
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", pendingResultBucket))
 		}
 
+		// get all the operations (without key)
 		bk.ForEach(func(k, v []byte) error {
 			var response entities.AgentOpResponse
 			if err := json.Unmarshal(v, &response); err != nil {
@@ -233,6 +235,7 @@ func (b *BboltAssetProvider) GetPendingOpResponses(removeEntries bool)([]entitie
 			return nil
 		})
 
+		// if removes -> foreach response -> remove it
 		if removeEntries{
 			for _, res := range result {
 				if err := bk.Delete([]byte(res.OperationId)); err != nil {
@@ -276,7 +279,7 @@ func (b *BboltAssetProvider) AddAgentStart(op entities.AgentStartInfo) derrors.E
 
 		key := []byte(op.AssetId)
 
-
+		// add the agent
 		if err := bk.Put(key, toAddBytes); err != nil {
 			return derrors.NewInternalError("Cannot add agent")
 		}
@@ -311,6 +314,7 @@ func (b *BboltAssetProvider) GetPendingAgentStart(removeEntries bool) ([]entitie
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", agentStartBucket))
 		}
 
+		// get ALL the agents (without key)
 		bk.ForEach(func(k, v []byte) error {
 			var response entities.AgentStartInfo
 			if err := json.Unmarshal(v, &response); err != nil {
@@ -321,6 +325,7 @@ func (b *BboltAssetProvider) GetPendingAgentStart(removeEntries bool) ([]entitie
 			return nil
 		})
 
+		// if remove flag is true -> delete all the agents that are going to be returned
 		if removeEntries{
 			for _, res := range result {
 				if err := bk.Delete([]byte(res.AssetId)); err != nil {
@@ -357,6 +362,7 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", assetsByAssetIDBucket))
 		}
 
+		// check if asset is already managed
 		res := bk.Get([]byte (asset.AssetId))
 
 		if res != nil {
@@ -367,6 +373,8 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 		if err != nil {
 			return conversions.ToDerror(err)
 		}
+
+		// add the asset in assetsByAssetIDBucket bucket
 		if err := bk.Put([]byte (asset.AssetId), toAddBytes); err != nil {
 			return derrors.NewInternalError("Cannot add new element")
 		}
@@ -375,6 +383,7 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 		if err != nil {
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", assetsByTokenBucket))
 		}
+		// add the asset in assetsByTokenBucket bucket
 		if err := bkToken.Put([]byte (asset.Token), toAddBytes); err != nil {
 			return derrors.NewInternalError("Cannot add new element")
 		}
@@ -408,10 +417,12 @@ func (b *BboltAssetProvider) RemoveManagedAsset(assetID string) derrors.Error {
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", assetsByAssetIDBucket))
 		}
 
+		// get the asses to check if it exists
 		res := bk.Get([]byte (assetID))
 
 		var asset entities.AgentJoinInfo
 
+		// if the asset does not exist -> error
 		if res == nil {
 			return derrors.NewFailedPreconditionError("asset is not managed by this EIC").WithParams(assetID)
 		}
@@ -419,7 +430,6 @@ func (b *BboltAssetProvider) RemoveManagedAsset(assetID string) derrors.Error {
 		if err := json.Unmarshal(res, &asset); err != nil {
 			return derrors.NewInternalError("error creating object")
 		}
-
 
 		bkToken, err := tx.CreateBucketIfNotExists([]byte(assetsByTokenBucket))
 		if bkToken == nil {
@@ -467,10 +477,11 @@ func (b *BboltAssetProvider) GetAssetByToken(token string) (*entities.AgentJoinI
 			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", assetsByTokenBucket))
 		}
 
+		// get the asset
 		res := bk.Get([]byte(token))
 
 		if res == nil {
-			return derrors.NewNotFoundError("cannot get the element")
+			return derrors.NewFailedPreconditionError("asset is not managed by this EIC")
 		}
 
 		if err := json.Unmarshal(res, &result); err != nil {
