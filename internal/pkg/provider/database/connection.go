@@ -16,26 +16,29 @@ const BboltTimeOut = 3
 type BboltDB struct {
 	Path string
 	DB *bolt.DB
+	// ReadOnly flag to indicate the option of the last Open. Flag needed to re-open y checkConnection
+	ReadOnly bool
 }
 
-func (b * BboltDB) OpenRead(path string) derrors.Error {
-	return b.openDB(path, true)
+func (b * BboltDB) OpenRead() derrors.Error {
+	return b.openDB(true)
 }
 
-func (b * BboltDB) OpenWrite(path string) derrors.Error {
-	return b.openDB(path, false)
+func (b * BboltDB) OpenWrite() derrors.Error {
+	return b.openDB( false)
 }
 
 // TODO: think about if it is better return *bolt.DB. It could exist a case where we need to reuse this
 // If we decide on it, add this parameter if unsafe operations
-func (b * BboltDB) openDB(path string, readOnly bool)  derrors.Error {
-	db, err := bolt.Open(path, 0600, &bolt.Options{ReadOnly: readOnly, Timeout: BboltTimeOut * time.Second})
+func (b * BboltDB) openDB( readOnly bool)  derrors.Error {
+	db, err := bolt.Open(b.Path, 0600, &bolt.Options{ReadOnly: readOnly, Timeout: BboltTimeOut * time.Second})
 	if err != nil {
-		log.Error().Str("Path", path).Msg("error opening bbolt database")
+		log.Error().Str("Path", b.Path).Msg("error opening bbolt database")
 		return derrors.NewInternalError("error opening bbolt database")
 	}
-	b.DB = db
 
+	b.ReadOnly = readOnly
+	b.DB = db
 	return nil
 }
 
@@ -44,6 +47,17 @@ func (b * BboltDB) Close() {
 		b.DB.Close()
 	}
 	b.DB = nil
+}
+
+func (b * BboltDB) CheckConnection() derrors.Error {
+	if b.DB == nil {
+		err := b.openDB(b.ReadOnly)
+		if err != nil {
+			log.Error().Str("Path", b.Path).Msg("error opening bbolt database")
+			return derrors.NewInternalError("error opening bbolt database")
+		}
+	}
+	return nil
 }
 
 // UnsafeGenericExist check if an element exists

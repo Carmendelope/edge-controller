@@ -28,11 +28,15 @@ type BboltAssetProvider struct {
 }
 
 func NewBboltAssetProvider(databasePath string) * BboltAssetProvider{
-	return &BboltAssetProvider{
-		BboltDB : database.BboltDB{
+	provider := BboltAssetProvider{
+		BboltDB: database.BboltDB{
 			Path: databasePath,
 		},
 	}
+
+	provider.OpenWrite()
+
+	return &provider
 }
 
 
@@ -42,11 +46,9 @@ func (b *BboltAssetProvider) AddPendingOperation(op entities.AgentOpRequest) der
 
 	obj := make([]entities.AgentOpRequest, 0)
 
-	err := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if err != nil {
-		return conversions.ToDerror(err)
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
 	}
 
 	newErr :=  b.DB.Update(func(tx *bolt.Tx) error {
@@ -103,13 +105,11 @@ func (b *BboltAssetProvider) GetPendingOperations(assetID string, removeEntries 
 	b.Lock()
 	defer b.Unlock()
 
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-
 	result := make([]entities.AgentOpRequest, 0)
+	checkErr := b.CheckConnection()
 
-	if openErr != nil {
-		return result, openErr
+	if checkErr != nil {
+		return result, checkErr
 	}
 
 	err := b.DB.Update(func(tx *bolt.Tx) error {
@@ -166,16 +166,14 @@ func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.
 	b.Lock()
 	defer b.Unlock()
 
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
+	}
+
 	toAddBytes, err := json.Marshal(op)
 	if err != nil {
 		return conversions.ToDerror(err)
-	}
-
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if openErr != nil {
-		return  openErr
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -209,13 +207,11 @@ func (b *BboltAssetProvider) GetPendingOpResponses(removeEntries bool)([]entitie
 	b.Lock()
 	defer b.Unlock()
 
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-
 	result := make([]entities.AgentOpResponse, 0)
 
-	if openErr != nil {
-		return result, openErr
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return result, checkErr
 	}
 
 	err := b.DB.Update(func(tx *bolt.Tx) error {
@@ -260,15 +256,14 @@ func (b *BboltAssetProvider) AddAgentStart(op entities.AgentStartInfo) derrors.E
 	b.Lock()
 	defer b.Unlock()
 
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
+	}
+
 	toAddBytes, err := json.Marshal(op)
 	if err != nil {
 		return conversions.ToDerror(err)
-	}
-
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-	if openErr != nil {
-		return  openErr
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -299,13 +294,11 @@ func (b *BboltAssetProvider) GetPendingAgentStart(removeEntries bool) ([]entitie
 	b.Lock()
 	defer b.Unlock()
 
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-
 	result := make([]entities.AgentStartInfo, 0)
 
-	if openErr != nil {
-		return result, openErr
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return result, checkErr
 	}
 
 	err := b.DB.Update(func(tx *bolt.Tx) error {
@@ -349,11 +342,9 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 	b.Lock()
 	defer b.Unlock()
 
-	err := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if err != nil {
-		return conversions.ToDerror(err)
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
 	}
 
 	newErr :=  b.DB.Update(func(tx *bolt.Tx) error {
@@ -404,11 +395,9 @@ func (b *BboltAssetProvider) RemoveManagedAsset(assetID string) derrors.Error {
 	b.Lock()
 	defer b.Unlock()
 
-	err := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if err != nil {
-		return conversions.ToDerror(err)
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
 	}
 
 	newErr :=  b.DB.Update(func(tx *bolt.Tx) error {
@@ -462,11 +451,9 @@ func (b *BboltAssetProvider) GetAssetByToken(token string) (*entities.AgentJoinI
 	b.Lock()
 	defer b.Unlock()
 
-	errOpen := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if errOpen != nil {
-		return nil, conversions.ToDerror(errOpen)
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return nil, checkErr
 	}
 
 	var result entities.AgentJoinInfo
@@ -504,15 +491,14 @@ func (b *BboltAssetProvider) AddJoinToken(joinToken string) derrors.Error{
 	b.Lock()
 	defer b.Unlock()
 
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
+	}
+
 	toAddBytes, err := json.Marshal(time.Now().Add(AgentJoinTokenTTL).Unix())
 	if err != nil {
 		return conversions.ToDerror(err)
-	}
-
-	openErr := b.OpenWrite(b.Path)
-	defer b.Close()
-	if openErr != nil {
-		return  openErr
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -541,14 +527,12 @@ func (b *BboltAssetProvider) CheckJoinJoin(joinToken string) (bool, derrors.Erro
 	b.Lock()
 	defer b.Unlock()
 
-	errOpen := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if errOpen != nil {
-		return false, conversions.ToDerror(errOpen)
-	}
-
 	check := false
+
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return false, checkErr
+	}
 
 	err := b.DB.Update(func(tx *bolt.Tx) error {
 		var result int64
@@ -590,11 +574,9 @@ func (b *BboltAssetProvider) clear(table string) derrors.Error{
 	b.Lock()
 	defer b.Unlock()
 
-	errOpen := b.OpenWrite(b.Path)
-	defer b.Close()
-
-	if errOpen != nil {
-		return conversions.ToDerror(errOpen)
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
 	}
 
 	err := b.DB.Update(func(tx *bolt.Tx) error {
