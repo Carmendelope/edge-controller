@@ -2,12 +2,21 @@ package asset
 
 import (
 	"github.com/onsi/ginkgo"
+	"github.com/rs/zerolog/log"
+	"io/ioutil"
 )
 
-const databasePath = "/tmp/nalej.db"
 var _ = ginkgo.Describe("Asset bbolt provider", func(){
 
-	b := NewBboltAssetProvider(databasePath)
+	file, err := ioutil.TempFile("", "*.db")
+	if err != nil {
+		log.Panic().Msg("enable to create file")
+	}
+	b := NewBboltAssetProvider(file.Name())
 	RunTest(b)
+
+	ginkgo.AfterSuite(func() {
+		b.Close()
+	})
 
 })
