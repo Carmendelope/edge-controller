@@ -4,3 +4,5 @@ bazel-*
 bin/*
 vendor
 vendor/*
+.vagrant
+*console.log
