@@ -1,0 +1,102 @@
+include scripts/Makefile.common
+
+.PHONY: all
+all: dep build test yaml image
+
+# Binary building
+.PHONY: build build-custom
+
+build: GOBUILDFLAGS=
+build: DISTPATH=${TARGET}
+build:
+	@echo ">>> Building binaries for your OS"
+	$(go-build-recipe)
+	@echo ">>> Finished building binaries for your OS"
+
+build-custom: GOBUILDFLAGS=CGO_ENABLED=0 GOOS=${BUILDOS} GOARCH=${BUILDARCH}
+build-custom: DISTPATH=${TARGET}/${BUILDOS}_${BUILDARCH}
+build-custom:
+	@echo ">>> Building binaries for ${BUILDOS} ${BUILDARCH}"
+	$(go-build-recipe)
+	@echo ">>> Finished building binaries for ${BUILDOS} ${BUILDARCH}"
+
+# Dependency download
+.PHONY: dep dep-update
+
+dep: DEPOPTS=-v
+dep: 
+	$(dep-recipe)
+
+dep-update: DEPOPTS=-v -update
+dep-update:
+	$(dep-recipe)
+
+# Testing
+.PHONY: test test-race test-coverage test-all
+
+test:
+	@echo ">>> Running tests"
+	$(test-recipe)
+
+test-race: TESTFLAGS=-race
+test-race:
+	@echo ">>> Running tests (Race detector enabled)"
+	$(test-recipe)
+
+test-coverage: TESTFLAGS=-coverprofile=${COVERAGE_FILE} -covermode=atomic
+test-coverage:
+	@echo ">>> Running tests (With code coverage)"
+	$(test-recipe)
+
+test-all: test test-race test-coverage
+
+# YAML rendering
+.PHONY: yaml
+
+yaml:
+	@echo ">>> Rendering Kubernetes resource files"
+	@rm -rf ${TARGET}/yaml/{appcluster,mngtcluster}
+	@mkdir -p ${TARGET}/yaml/{appcluster,mngtcluster}
+	$(call yaml-render-recipe,$(APPS),mngtcluster)
+	$(call yaml-render-recipe,$(APPS),appcluster)
+
+# Docker
+.PHONY: docker-build docker-push image publish
+
+docker-build:
+	@echo ">>> Building Docker images"
+	$(call docker-build-recipe,$(APPS))
+	@echo ">>> Finished building Docker images"
+
+docker-push:
+	@echo ">>> Pushing Docker images to $(AZURE_CR) registry"
+	$(call docker-push-recipe,$(APPS))
+	@echo ">>> Finished pushing Docker images"
+
+image: build-custom docker-build
+publish: image az-login docker-push az-logout
+
+# Azure
+.PHONY: az-login az-logout
+
+az-login: ACR_NAME=${AZURE_CR}
+az-login:
+	@echo ">>> Logging in Azure and Azure Container Registry ..."
+	@${AZURECLICMD} login
+	@${AZURECLICMD} acr login --name ${ACR_NAME}
+
+
+# DEPRECATED TARGETS
+.PHONY: local linux
+local: 
+	@echo "'make local' is DEPRECATED and will be removed soon. Use 'make build' instead"
+	@$(MAKE) build
+linux:
+	@echo "'make linux' is DEPRECATED and will be removed soon. Use 'make build-custom' instead"
+	@$(MAKE) build-custom
+create-image:
+	@echo "'make create-image' is DEPRECATED and will be removed soon. Use 'make docker-build' instead"
+	@$(MAKE) docker-build
+publish-image:
+	@echo "'make publish-image' is DEPRECATED and will be removed soon. Use 'make docker-push' instead"
+	@$(MAKE) docker-push
