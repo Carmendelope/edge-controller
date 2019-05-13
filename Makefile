@@ -3,6 +3,7 @@
 # 
 
 include scripts/Makefile.golang
+include scripts/Makefile.vagrant
 
 .DEFAULT_GOAL := all
 

@@ -1,0 +1,18 @@
+.PHONY: vagrant vagrant-up vagrant-stop vagrant-restart-service
+vagrant-up:
+	@echo ">>> Starting edge-controller VM"
+	@vagrant up
+
+vagrant-stop:
+	@echo ">>> Stopping edge-controller VM"
+	@vagrant halt
+
+vagrant-destroy:
+	@echo ">>> Removing edge-controller VM"
+	@vagrant destroy
+
+vagrant-restart-service:
+	@echo ">>> Restarting edge-controller service inside the VM"
+	@vagrant ssh -c "sudo systemctl restart edge-controller.service"
+
+vagrant: dep build-custom vagrant-up
