@@ -1,0 +1,13 @@
+[Unit]
+Description=Edge Controller service
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=vagrant
+ExecStart=/vagrant/bin/linux_amd64/edge-controller run --useInMemoryProviders
+
+[Install]
+WantedBy=multi-user.target
