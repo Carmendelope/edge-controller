@@ -39,4 +39,6 @@ func init() {
 	runCmd.Flags().IntVar(&cfg.AgentPort, "agentPort", 5556, "Port to receive agent messages")
 	runCmd.Flags().DurationVar(&cfg.NotifyPeriod, "notifyPeriod", d, "Notification period to the management cluster")
 	runCmd.Flags().BoolVar(&cfg.UseInMemoryProviders, "useInMemoryProviders", false,"Use InMemory providers")
+	runCmd.Flags().BoolVar(&cfg.UseBBoltProviders, "useBBoltProviders", false,"Use Bbolt providers")
+	runCmd.Flags().StringVar(&cfg.BboltPath, "bboltpath", "", "Database path")
 }

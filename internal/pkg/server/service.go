@@ -54,10 +54,22 @@ func (s*Service) CreateInMemoryProviders() * Providers{
 	}
 }
 
+// CreateBBoltProviders creates Bboltroviders.
+func (s*Service) CreateBBoltProviders() * Providers{
+	return &Providers{
+		assetProvider: assetProvider.NewBboltAssetProvider(s.Configuration.BboltPath),
+	}
+}
+
 func (s*Service) GetProviders() * Providers{
 	if s.Configuration.UseInMemoryProviders{
 		return s.CreateInMemoryProviders()
+	}else {
+		if s.Configuration.UseBBoltProviders{
+			return s.CreateBBoltProviders()
+		}
 	}
+
 	log.Fatal().Msg("unsupported type of provider")
 	return nil
 }

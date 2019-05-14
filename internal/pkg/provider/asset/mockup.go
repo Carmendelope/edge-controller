@@ -155,6 +155,7 @@ func (m *MockupAssetProvider) RemoveManagedAsset(assetID string) derrors.Error {
 		}
 	}
 	delete(m.assetsByToken, associatedToken)
+	delete(m.assetsByAssetID, assetID)
 	return nil
 }
 
