@@ -41,4 +41,8 @@ func init() {
 	runCmd.Flags().BoolVar(&cfg.UseInMemoryProviders, "useInMemoryProviders", false,"Use InMemory providers")
 	runCmd.Flags().BoolVar(&cfg.UseBBoltProviders, "useBBoltProviders", false,"Use Bbolt providers")
 	runCmd.Flags().StringVar(&cfg.BboltPath, "bboltpath", "", "Database path")
+	runCmd.Flags().StringVar(&cfg.JoinTokenPath, "joinTokenPath", "", "Token Path")
+	runCmd.Flags().IntVar(&cfg.EicApiPort, "eicapiPort", 443, "Port to send the join message")
+	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
+	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 }

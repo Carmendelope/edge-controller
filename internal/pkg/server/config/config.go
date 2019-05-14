@@ -32,6 +32,14 @@ type Config struct {
 	OrganizationId string
 	// EdgeControllerId with the edge controller identifier
 	EdgeControllerId string
+	// JoinTokenPath contains the path of the file with the token configuration.
+	JoinTokenPath string
+	// EicApiPort with the port to connect of the eic-api
+	EicApiPort int
+	// Name contains the edge controller name
+	Name string
+	// Labels contains the edge controller labels
+	Labels string
 
 }
 
@@ -57,6 +65,10 @@ func (conf * Config) Validate() derrors.Error {
 	if conf.UseBBoltProviders && conf.UseInMemoryProviders {
 		return derrors.NewInvalidArgumentError("only one type of provider must be selected")
 	}
+	if conf.Name == "" {
+		return derrors.NewInvalidArgumentError("name must be specified")
+	}
+
 	return nil
 }
 
@@ -72,4 +84,10 @@ func (conf *Config) Print() {
 		log.Info().Str("BboltPath", conf.BboltPath).Msg("BboltPath")
 	}
 	log.Info().Str("duration", conf.NotifyPeriod.String()).Msg("Notify period")
+	log.Info().Str("JoinTokenPath", conf.JoinTokenPath).Msg("Join Token Path")
+	log.Info().Int("EIC-APIPort", conf.EicApiPort).Msg("gRPC EIC-API port")
+	log.Info().Str("Name", conf.Name).Msg("Edge Controller name")
+	if conf.Labels != "" {
+		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
+	}
 }

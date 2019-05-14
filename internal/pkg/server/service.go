@@ -9,8 +9,10 @@ import (
 	assetProvider "github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
+	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -93,6 +95,19 @@ func (s *Service) Run() error {
 		log.Fatal().Str("error", err.DebugReport()).Msg("Invalid configuration")
 	}
 	s.Configuration.Print()
+
+	// if the controller
+	joinHelper, jErr := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name, s.Configuration.Labels)
+	if jErr != nil {
+		log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error creating joinHelper")
+	}
+	if joinHelper.NeedJoin(){
+		_, jErr := joinHelper.Join()
+		if jErr != nil {
+			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error in join")
+		}
+	}
+
 	providers := s.GetProviders()
 	clients := s.GetClients()
 	return s.LaunchAgentServer(providers, clients)

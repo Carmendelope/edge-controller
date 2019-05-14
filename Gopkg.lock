@@ -5,16 +5,34 @@
   digest = "1:529d738b7976c3848cae5cf3a8036440166835e389c1f617af701eeb12a0518d"
   name = "github.com/golang/protobuf"
   packages = [
+    "jsonpb",
     "proto",
     "protoc-gen-go/descriptor",
+    "protoc-gen-go/generator",
+    "protoc-gen-go/generator/internal/remap",
+    "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
+    "ptypes/struct",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = ""
   revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
   version = "v1.3.1"
+
+[[projects]]
+  digest = "1:dee8ec16fa714522c6cad579dfeeba3caf9644d93b8b452cd7138584402c81f7"
+  name = "github.com/grpc-ecosystem/grpc-gateway"
+  packages = [
+    "internal",
+    "runtime",
+    "utilities",
+  ]
+  pruneopts = ""
+  revision = "8fd5fd9d19ce68183a6b0934519dfe7fe6269612"
+  version = "v1.9.0"
 
 [[projects]]
   digest = "1:b3c5b95e56c06f5aa72cb2500e6ee5f44fcd122872d4fec2023a488e561218bc"
@@ -77,6 +95,14 @@
   pruneopts = ""
   revision = "e146ee361b1e580d9194f8167d72f75a760ebe56"
   version = "v0.0.5"
+
+[[projects]]
+  digest = "1:791a72ce09d30b99964d4f6d422df87a1208d5f38a6cb4294def51f916a868f1"
+  name = "github.com/nalej/grpc-eic-api-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "09f970d99db6e682192fb78b4ee5802f4df9e822"
+  version = "v0.0.3"
 
 [[projects]]
   digest = "1:09fb41dc9fd129e4021f026f8be8aa8d36e2b9a55cf2c66d5289fe8d726845aa"
@@ -213,7 +239,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4f349a7da3e52df38345913607fb3daac185365588a633088107146283b48b46"
+  digest = "1:ccd51599eb31c3ee139de1b1fca3f5d3ddaa5ab37f3a1704a2a8426c0abd1e5b"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -228,15 +254,15 @@
     "trace",
   ]
   pruneopts = ""
-  revision = "f4e77d36d62c17c2336347bb2670ddbd02d092b7"
+  revision = "a4d6f7feada510cc50e69a37b484cb0fdc6b7876"
 
 [[projects]]
   branch = "master"
-  digest = "1:715452e95922861c2d89d72dddb1885df4d39e1b7f8937b92b1d7128a371c8ed"
+  digest = "1:8f9263a1e1d886efe08142f5e47c16520d614e3640f10f4e09f98949742d5818"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
-  revision = "12bbe5a7a5209180b72cc7e3ed9da40442fe3246"
+  revision = "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
 
 [[projects]]
   digest = "1:740b51a55815493a8d0f2b1e0d0ae48fe48953bf7eaf3fcc4198823bf67768c0"
@@ -277,14 +303,17 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:55a5e2ce90501a44c6076cd3cbc7a0bb2d147152827dffc38d1da4700c3a150a"
+  digest = "1:e9dca05591f7c44d3a44e88a10f25d014040e8a7b3a7c2d3b097a4f6090d30f7"
   name = "google.golang.org/genproto"
   packages = [
+    "googleapis/api/annotations",
+    "googleapis/api/httpbody",
     "googleapis/rpc/errdetails",
     "googleapis/rpc/status",
+    "protobuf/field_mask",
   ]
   pruneopts = ""
-  revision = "54afdca5d873f7b529e2ce3def1a99df16feda90"
+  revision = "d00d292a067ce1aa0017b40ca75437b42461fa61"
 
 [[projects]]
   digest = "1:afc1b03a6d5ba3cbb2e0a12133e734d472e4df3b65f06e600a3d57a4b82f26cc"
@@ -361,6 +390,7 @@
     "github.com/nalej/derrors",
     "github.com/nalej/grpc-common-go",
     "github.com/nalej/grpc-edge-controller-go",
+    "github.com/nalej/grpc-eic-api-go",
     "github.com/nalej/grpc-inventory-go",
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
@@ -373,6 +403,8 @@
     "go.etcd.io/bbolt",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/credentials",
+    "google.golang.org/grpc/metadata",
     "google.golang.org/grpc/reflection",
   ]
   solver-name = "gps-cdcl"
