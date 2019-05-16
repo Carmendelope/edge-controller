@@ -1,6 +1,7 @@
 [Unit]
 Description=Edge Controller service
-After=network.target
+Wants=vpnclient.service
+After=network.target vpnclient.service
 StartLimitIntervalSec=0
 [Service]
 Type=simple
