@@ -1,0 +1,13 @@
+[Unit]
+Description=SoftEther VPNClient service
+After=network.target auditd.service
+
+[Service]
+Type=forking
+Restart=on-failure
+ExecStart=/usr/bin/vpnclient/vpnclient start
+ExecStop=/usr/bin/vpnclient/vpnclient stop
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
