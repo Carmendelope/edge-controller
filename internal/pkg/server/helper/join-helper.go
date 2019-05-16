@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nalej/derrors"
+	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-eic-api-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
@@ -15,10 +16,24 @@ import (
 	"google.golang.org/grpc/metadata"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
 
+const (
+	commandClient = "/usr/bin/vpnclient/vpnclient"
+	command = "/usr/bin/vpnclient/vpncmd"
+	cmdMode = "/Client"
+	hub = "/HUB:DEFAULT"
+	cmdCmd = "/cmd"
+	nicCreateCmd = "NicCreate"
+	nicName ="nicName"
+	nicUser ="/NICNAME:nicname"
+	accountCreateCmd = "AccountCreate"
+	accountPasswordSetCmd = "AccountPasswordSet"
+	vpnClientAddress = "localhost"
+)
 const DefaultTimeout = time.Minute
 
 const AuthHeader = "Authorization"
@@ -40,6 +55,7 @@ type JoinHelper struct {
 	Name string
 	// labels with the edge controller labels
 	Labels map[string]string
+	DnsUrl string
 }
 
 func NewJoinHelper (configFile string, port int, name string, labels string ) (*JoinHelper, error) {
@@ -73,6 +89,7 @@ func NewJoinHelper (configFile string, port int, name string, labels string ) (*
 		Cacert: eicToken.Cacert,
 		JoinUrl: eicToken.JoinUrl,
 		Labels: joinLabels,
+		DnsUrl: eicToken.DnsUrl,
 	}, nil
 }
 
@@ -99,12 +116,19 @@ func getLabels (labelsStr string) (map[string]string, derrors.Error) {
 }
 
 // NeedJoin returns true if the EIC needs to send the join message
-func (j * JoinHelper) NeedJoin () bool {
-	return true
+func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
+	/*_, err := os.Stat(config.BboltPath)
+	if os.IsNotExist(err) {
+		return true, nil
+	}
+
+	return err != nil, err
+	*/
+	return true, nil
 }
 
 func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error){
-
+	log.Info().Msg("JOIN INIT")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
 
@@ -127,14 +151,62 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 	}
 	log.Debug().Interface("credentials", joinResponse.Credentials).Msg("Join credentials")
 
-	return nil, nil
+	return joinResponse.Credentials, nil
 }
 
 func (j * JoinHelper) ConfigureDNS () error {
+
+	cmd := exec.Command("echo", j.DnsUrl)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.VPNCredentials) error {
+
+	log.Info().Interface("credentials", credentials).Msg("ConfigureLocalVPN.INIT")
+	// start the client
+	//cmd := exec.Command("sudo", "/usr/bin/vpnclient/vpnclient", "start")
+	//err := cmd.Run()
+	//if err != nil {
+	//	log.Info().Interface("error", err.Error()).Msg("error starting client")
+	//	return err
+	//}
+
+	// NicCreate
+	cmd := exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, nicCreateCmd, nicName)
+	err := cmd.Run()
+	if err != nil {
+		log.Info().Str("error", err.Error()).Msg("error creating nicName")
+		//return err
+	}
+	vpnServer := fmt.Sprintf("/SERVER:vpn-server.%s:5555", credentials.Hostname)
+	vpnUserName := fmt.Sprintf("/USERNAME:%s", credentials.Username)
+	// Account Create
+	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountCreateCmd, credentials.Username, vpnServer, hub, vpnUserName, nicUser)
+	err = cmd.Run()
+	if err != nil {
+		log.Warn().Str("error", err.Error()).Msg("error creating account")
+		//return err
+	}
+	// Account PasswordSet
+	pass := fmt.Sprintf("/PASSWORD:%s", credentials.Password)
+	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountPasswordSetCmd, credentials.Username, pass, "/TYPE:standard")
+	err = cmd.Run()
+	if err != nil {
+		log.Warn().Str("error", err.Error()).Msg("error creating password")
+		//return err
+	}
+	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, "accountConnect", credentials.Username)
+	err = cmd.Run()
+	if err != nil {
+		log.Warn().Str("error", err.Error()).Msg("error connecting account")
+		//return err
+	}
+
 	return nil
 }
 

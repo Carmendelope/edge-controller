@@ -7,6 +7,7 @@ cd /tmp
 tar zxvf softether-vpnclient-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz
 cd /tmp/vpnclient
 make i_read_and_agree_the_license_agreement
+rm -rf /usr/bin/vpnclient
 cp -r /tmp/vpnclient /usr/bin/vpnclient
 rm -rf /tmp/softether-vpnclient-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz
 rm -rf /tmp/vpnclient

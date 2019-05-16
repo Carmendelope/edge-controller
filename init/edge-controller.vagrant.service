@@ -7,7 +7,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=vagrant
-ExecStart=/vagrant/bin/linux_amd64/edge-controller run --useInMemoryProviders
+ExecStart=/vagrant/bin/linux_amd64/edge-controller run --joinTokenPath=/vagrant/joinToken.json --useBBoltProviders --bboltpath=/home/vagrant/database.db --name EIC0015 --labels=lab1:val1,lab2:val2
 
 [Install]
 WantedBy=multi-user.target

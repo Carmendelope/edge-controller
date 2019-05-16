@@ -1,6 +1,5 @@
 package database
 
-
 import (
 	"encoding/json"
 	"fmt"
