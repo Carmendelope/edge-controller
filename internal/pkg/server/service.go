@@ -96,32 +96,41 @@ func (s *Service) Run() error {
 	}
 	s.Configuration.Print()
 
-	// if the controller
+	//If the controller has not done the join yet, it will have to be done
 	joinHelper, jErr := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name, s.Configuration.Labels)
 	if jErr != nil {
 		log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error creating joinHelper")
 	}
+
+	joinHelper.Test()
+
+/*
 	needJoin, nErr := joinHelper.NeedJoin(s.Configuration)
 	if nErr != nil {
 		log.Fatal().Str("error", conversions.ToDerror(nErr).DebugReport()).Msg("Error asking for join")
 	}
-	log.Info().Bool("join", needJoin).Msg("asking if Edge controller needs join")
+
 	if needJoin{
 		credentials, jErr := joinHelper.Join()
 		if jErr != nil {
 			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error in join")
 		}
-		// TODO: configureDNS
-		err := joinHelper.ConfigureDNS()
+
+		// configureDNS
+		errJoin := joinHelper.ConfigureDNS()
 		if err != nil {
-			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("enable to configure DNS")
+			log.Fatal().Str("error", conversions.ToDerror(errJoin).DebugReport()).Msg("enable to configure DNS")
 		}
-		// TODO: ConfigureLocalVPN
+
+		// ConfigureLocalVPN
 		err = joinHelper.ConfigureLocalVPN(credentials)
 		if err != nil {
 			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("enable to configure VPN")
 		}
 	}
+*/
+
+// TODO: get credentials.Hostname and load ManagementCluster
 
 	providers := s.GetProviders()
 	clients := s.GetClients()

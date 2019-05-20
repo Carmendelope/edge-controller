@@ -40,6 +40,8 @@ type Config struct {
 	Name string
 	// Labels contains the edge controller labels
 	Labels string
+	// ProxyURL with the URL required to connect to the PROXY
+	ProxyURL string
 
 }
 

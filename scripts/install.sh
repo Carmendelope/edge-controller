@@ -23,6 +23,8 @@ systemctl daemon-reload
 systemctl stop vpnclient.service
 systemctl start vpnclient.service
 
+chmod 777 /etc/resolv.conf
+
 # edge-controller service
 cp /vagrant/init/edge-controller.vagrant.service /etc/systemd/system/edge-controller.service
 chmod 644 /etc/systemd/system/edge-controller.service

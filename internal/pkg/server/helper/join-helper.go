@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -22,7 +23,6 @@ import (
 )
 
 const (
-	commandClient = "/usr/bin/vpnclient/vpnclient"
 	command = "/usr/bin/vpnclient/vpncmd"
 	cmdMode = "/Client"
 	hub = "/HUB:DEFAULT"
@@ -37,6 +37,7 @@ const (
 const DefaultTimeout = time.Minute
 
 const AuthHeader = "Authorization"
+
 
 type JoinHelper struct {
 	// JoinTokenFile path
@@ -117,18 +118,16 @@ func getLabels (labelsStr string) (map[string]string, derrors.Error) {
 
 // NeedJoin returns true if the EIC needs to send the join message
 func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
-	/*_, err := os.Stat(config.BboltPath)
+	_, err := os.Stat(config.BboltPath)
 	if os.IsNotExist(err) {
 		return true, nil
 	}
 
 	return err != nil, err
-	*/
-	return true, nil
+
 }
 
 func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error){
-	log.Info().Msg("JOIN INIT")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
 
@@ -149,17 +148,53 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 		log.Error().Str("trace", conversions.ToDerror(joinErr).DebugReport()).Msg("error getting credentials")
 		return nil, joinErr
 	}
-	log.Debug().Interface("credentials", joinResponse.Credentials).Msg("Join credentials")
 
 	return joinResponse.Credentials, nil
 }
 
-func (j * JoinHelper) ConfigureDNS () error {
+func (j * JoinHelper) writeDNSNameServer (ip string) error {
+	log.Info().Str("dns", ip).Msg("adding dns entry	")
+	auxFile := "/home/vagrant/aux.conf"
+	resolveConf := "/etc/resolv.conf"
+	name := fmt.Sprintf("nameserver %s", ip)
 
-	cmd := exec.Command("echo", j.DnsUrl)
-	err := cmd.Run()
+	cmds := []string{
+		fmt.Sprintf("cat %s >> %s", resolveConf, auxFile),
+		fmt.Sprintf("echo '%s' >> %s",name,auxFile),
+		fmt.Sprintf("cp %s %s",auxFile,resolveConf),
+		fmt.Sprintf("rm %s", auxFile),
+	}
+	for _, inst := range cmds {
+		cmd := exec.Command("/bin/sh", "-c", inst)
+		err := cmd.Run()
+		if err != nil {
+			log.Error().Str("error", err.Error()).Str("inst", inst).Msg("error executing")
+			return err
+		}
+	}
+	//log.Fatal().Msg("stop!")
+
+	log.Info().Msg("dns added in /etc/resolv.conf file")
+
+	return nil
+}
+
+func (j * JoinHelper) Test() error  {
+
+
+	return nil
+}
+
+func (j * JoinHelper) ConfigureDNS () error {
+	log.Info().Msg("Configuring DNS")
+
+	ips, err := net.LookupIP(j.DnsUrl)
 	if err != nil {
 		return err
+	}
+	for _, ip := range ips {
+
+		j.writeDNSNameServer(ip.String())
 	}
 
 	return nil
@@ -167,14 +202,7 @@ func (j * JoinHelper) ConfigureDNS () error {
 
 func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.VPNCredentials) error {
 
-	log.Info().Interface("credentials", credentials).Msg("ConfigureLocalVPN.INIT")
-	// start the client
-	//cmd := exec.Command("sudo", "/usr/bin/vpnclient/vpnclient", "start")
-	//err := cmd.Run()
-	//if err != nil {
-	//	log.Info().Interface("error", err.Error()).Msg("error starting client")
-	//	return err
-	//}
+	log.Info().Str("user", credentials.Username).Msg("Configuring Local VPN")
 
 	// NicCreate
 	cmd := exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, nicCreateCmd, nicName)
@@ -204,8 +232,10 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 	err = cmd.Run()
 	if err != nil {
 		log.Warn().Str("error", err.Error()).Msg("error connecting account")
-		//return err
+		return err
 	}
+
+	log.Info().Str("user", credentials.Username).Msg("connected")
 
 	return nil
 }
