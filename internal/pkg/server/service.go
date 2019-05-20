@@ -123,9 +123,9 @@ func (s *Service) Run() error {
 		}
 
 		// ConfigureLocalVPN
-		err = joinHelper.ConfigureLocalVPN(credentials)
-		if err != nil {
-			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("enable to configure VPN")
+		errVpn := joinHelper.ConfigureLocalVPN(credentials)
+		if errVpn != nil {
+			log.Fatal().Str("error", conversions.ToDerror(errVpn).DebugReport()).Msg("enable to configure VPN")
 		}
 	}
 
