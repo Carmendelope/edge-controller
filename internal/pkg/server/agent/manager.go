@@ -10,7 +10,6 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-edge-controller-go"
-	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
@@ -65,9 +64,12 @@ func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) de
 	return nil
 }
 
-func (m * Manager) AgentCheck(assetID *grpc_inventory_go.AssetId) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
-	m.notifier.AgentAlive(assetID.AssetId)
-	pending, err := m.provider.GetPendingOperations(assetID.AssetId, true)
+func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
+	// TODO: Verify clock sync
+	// TODO: Handle plugin data
+
+	m.notifier.AgentAlive(request.AssetId)
+	pending, err := m.provider.GetPendingOperations(request.AssetId, true)
 	if err != nil{
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent")
 		// In this case the error is not returned to the agent as it cannot do anything.
