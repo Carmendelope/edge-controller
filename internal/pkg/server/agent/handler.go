@@ -8,7 +8,6 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-edge-controller-go"
-	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
@@ -51,12 +50,12 @@ func (h *Handler) AgentStart(ctx context.Context, info *grpc_inventory_manager_g
 	return &grpc_common_go.Success{}, nil
 }
 
-func (h *Handler) AgentCheck(ctx context.Context, assetID *grpc_inventory_go.AssetId) (*grpc_edge_controller_go.CheckResult, error) {
-	err := entities.ValidAssetId(assetID)
+func (h *Handler) AgentCheck(ctx context.Context, request *grpc_edge_controller_go.AgentCheckRequest) (*grpc_edge_controller_go.CheckResult, error) {
+	err := entities.ValidAgentCheckRequest(request)
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)
 	}
-	result, err := h.Manager.AgentCheck(assetID)
+	result, err := h.Manager.AgentCheck(request)
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)
 	}
