@@ -88,48 +88,52 @@ func (s*Service) GetClients() * Clients{
 	}
 }
 
+// TODO: check the error control. When the service can not be launching the VM restart it and a lot of users can be added into VPN
 // Run the service, launch the REST service handler.
 func (s *Service) Run() error {
-	err := s.Configuration.Validate()
-	if err != nil{
-		log.Fatal().Str("error", err.DebugReport()).Msg("Invalid configuration")
+	valErr := s.Configuration.Validate()
+	if valErr != nil{
+		log.Fatal().Str("error", valErr.DebugReport()).Msg("Invalid configuration")
 	}
 	s.Configuration.Print()
 
 	//If the controller has not done the join yet, it will have to be done
-	joinHelper, jErr := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name, s.Configuration.Labels)
-	if jErr != nil {
-		log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error creating joinHelper")
+	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name, s.Configuration.Labels)
+	if err != nil {
+		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error creating joinHelper")
 	}
 
-	needJoin, nErr := joinHelper.NeedJoin(s.Configuration)
-	if nErr != nil {
-		log.Fatal().Str("error", conversions.ToDerror(nErr).DebugReport()).Msg("Error asking for join")
+	needJoin, err := joinHelper.NeedJoin(s.Configuration)
+	if err != nil {
+		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error asking for join")
 	}
 
 	log.Info().Bool("need join", needJoin).Msg("Join")
 
 	if needJoin{
 		log.Info().Msg("Join needed!")
-		credentials, jErr := joinHelper.Join()
-		if jErr != nil {
-			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error in join")
+		credentials, err := joinHelper.Join()
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error in join")
 		}
 
 		// configureDNS
-		errJoin := joinHelper.ConfigureDNS()
+		err = joinHelper.ConfigureDNS()
 		if err != nil {
-			log.Fatal().Str("error", conversions.ToDerror(errJoin).DebugReport()).Msg("enable to configure DNS")
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("enable to configure DNS")
 		}
 
 		// ConfigureLocalVPN
-		errVpn := joinHelper.ConfigureLocalVPN(credentials)
-		if errVpn != nil {
-			log.Fatal().Str("error", conversions.ToDerror(errVpn).DebugReport()).Msg("enable to configure VPN")
+		err = joinHelper.ConfigureLocalVPN(credentials)
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("enable to configure VPN")
+		}
+
+		err = joinHelper.GetIP()
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("getting IP")
 		}
 	}
-
-
 
 // TODO: get credentials.Hostname and load ManagementCluster
 
@@ -143,6 +147,7 @@ func (s*Service) LaunchEICServer() error{
 	return nil
 }
 
+// TODO:
 func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) error{
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.AgentPort))
 	if err != nil {

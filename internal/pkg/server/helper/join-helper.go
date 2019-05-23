@@ -28,8 +28,7 @@ const (
 	hub = "/HUB:DEFAULT"
 	cmdCmd = "/cmd"
 	nicCreateCmd = "NicCreate"
-	nicName ="nicName"
-	nicUser ="/NICNAME:nicname"
+	nicName ="nicname"
 	accountCreateCmd = "AccountCreate"
 	accountPasswordSetCmd = "AccountPasswordSet"
 	vpnClientAddress = "localhost"
@@ -140,7 +139,6 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 		log.Error().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot create the connection with the Nalej platform")
 		return nil, err
 	}
-	log.Info().Msg("Join edge controller-1")
 	client := grpc_eic_api_go.NewEICClient(conn)
 
 
@@ -149,12 +147,11 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 		Name: j.Name,
 		Labels: j.Labels,
 	})
-	log.Info().Msg("Join edge controller-2")
 	if joinErr != nil {
 		log.Error().Str("trace", conversions.ToDerror(joinErr).DebugReport()).Msg("error getting credentials")
 		return nil, joinErr
 	}
-	log.Info().Interface("credentials", joinResponse.Credentials).Msg("Join edge controller end")
+	log.Info().Interface("credentials", joinResponse.Credentials.Username).Msg("Join edge controller end")
 
 	return joinResponse.Credentials, nil
 }
@@ -193,6 +190,26 @@ func (j * JoinHelper) ConfigureDNS () error {
 	return nil
 }
 
+// GetIP enable IP4 forwarding and alter IP Table
+func (j * JoinHelper) GetIP () error{
+	// get IP
+	cmds := []string{"echo \"net.ipv4.ip_forward=1\" >> /etc/sysctl.conf",
+		"sysctl -p",
+		fmt.Sprintf("dhclient vpn_%s", nicName)}
+	for _, command := range cmds {
+		log.Info().Str("comando", command).Msg("COMANDO!")
+		cmd := exec.Command("/bin/sh", "-c", command)
+		err := cmd.Run()
+		if err != nil {
+			log.Warn().Str("command", command).Str("error", err.Error()).Msg("error executing")
+			return err
+		}
+	}
+	return nil
+
+}
+
+// ConfigureLocalVPN connects to VPN server the user indicated in credentials and executes dhclient to get IP
 func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.VPNCredentials) error {
 
 	log.Info().Str("user", credentials.Username).Msg("Configuring Local VPN")
@@ -202,25 +219,26 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 	err := cmd.Run()
 	if err != nil {
 		log.Info().Str("error", err.Error()).Msg("error creating nicName")
-		//return err
 	}
 	vpnServer := fmt.Sprintf("/SERVER:vpn-server.%s:5555", credentials.Hostname)
 	vpnUserName := fmt.Sprintf("/USERNAME:%s", credentials.Username)
+	vpnNicName :=  fmt.Sprintf("/NICNAME:%s", nicName)
+
 	// Account Create
-	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountCreateCmd, credentials.Username, vpnServer, hub, vpnUserName, nicUser)
+	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountCreateCmd, credentials.Username, vpnServer, hub, vpnUserName, vpnNicName)
 	err = cmd.Run()
 	if err != nil {
 		log.Warn().Str("error", err.Error()).Msg("error creating account")
-		//return err
 	}
+
 	// Account PasswordSet
 	pass := fmt.Sprintf("/PASSWORD:%s", credentials.Password)
 	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountPasswordSetCmd, credentials.Username, pass, "/TYPE:standard")
 	err = cmd.Run()
 	if err != nil {
 		log.Warn().Str("error", err.Error()).Msg("error creating password")
-		//return err
 	}
+
 	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, "accountConnect", credentials.Username)
 	err = cmd.Run()
 	if err != nil {
