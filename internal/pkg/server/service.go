@@ -9,8 +9,10 @@ import (
 	assetProvider "github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
+	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -86,13 +88,55 @@ func (s*Service) GetClients() * Clients{
 	}
 }
 
+// TODO: check the error control. When the service can not be launching the VM restart it and a lot of users can be added into VPN
 // Run the service, launch the REST service handler.
 func (s *Service) Run() error {
-	err := s.Configuration.Validate()
-	if err != nil{
-		log.Fatal().Str("error", err.DebugReport()).Msg("Invalid configuration")
+	valErr := s.Configuration.Validate()
+	if valErr != nil{
+		log.Fatal().Str("error", valErr.DebugReport()).Msg("Invalid configuration")
 	}
 	s.Configuration.Print()
+
+	//If the controller has not done the join yet, it will have to be done
+	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name, s.Configuration.Labels)
+	if err != nil {
+		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error creating joinHelper")
+	}
+
+	needJoin, err := joinHelper.NeedJoin(s.Configuration)
+	if err != nil {
+		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error asking for join")
+	}
+
+	log.Info().Bool("need join", needJoin).Msg("Join")
+
+	if needJoin{
+		log.Info().Msg("Join needed!")
+		credentials, err := joinHelper.Join()
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error in join")
+		}
+
+		// configureDNS
+		err = joinHelper.ConfigureDNS()
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("enable to configure DNS")
+		}
+
+		// ConfigureLocalVPN
+		err = joinHelper.ConfigureLocalVPN(credentials)
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("enable to configure VPN")
+		}
+
+		err = joinHelper.GetIP()
+		if err != nil {
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("getting IP")
+		}
+	}
+
+// TODO: get credentials.Hostname and load ManagementCluster
+
 	providers := s.GetProviders()
 	clients := s.GetClients()
 	return s.LaunchAgentServer(providers, clients)
@@ -103,6 +147,7 @@ func (s*Service) LaunchEICServer() error{
 	return nil
 }
 
+// TODO:
 func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) error{
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.AgentPort))
 	if err != nil {

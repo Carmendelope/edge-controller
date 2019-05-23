@@ -35,10 +35,14 @@ func init() {
 	d, _ := time.ParseDuration(DefaultNotificationPeriod)
 
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().IntVar(&cfg.Port, "port", 5555, "Port to receive management communications")
-	runCmd.Flags().IntVar(&cfg.AgentPort, "agentPort", 5556, "Port to receive agent messages")
+	runCmd.Flags().IntVar(&cfg.Port, "port", 5577, "Port to receive management communications")
+	runCmd.Flags().IntVar(&cfg.AgentPort, "agentPort", 5588, "Port to receive agent messages")
 	runCmd.Flags().DurationVar(&cfg.NotifyPeriod, "notifyPeriod", d, "Notification period to the management cluster")
 	runCmd.Flags().BoolVar(&cfg.UseInMemoryProviders, "useInMemoryProviders", false,"Use InMemory providers")
 	runCmd.Flags().BoolVar(&cfg.UseBBoltProviders, "useBBoltProviders", false,"Use Bbolt providers")
 	runCmd.Flags().StringVar(&cfg.BboltPath, "bboltpath", "", "Database path")
+	runCmd.Flags().StringVar(&cfg.JoinTokenPath, "joinTokenPath", "", "Token Path")
+	runCmd.Flags().IntVar(&cfg.EicApiPort, "eicapiPort", 443, "Port to send the join message")
+	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
+	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 }
