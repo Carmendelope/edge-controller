@@ -1,17 +1,23 @@
 package helper
 
-type Match struct {
-	Macaddress string `json:"macaddress,omitempty"`
-}
+/*
+network:
+    version: 2
+    ethernets:
+        enp0s3:
+            dhcp4: true
+            match:
+                macaddress: 02:35:4a:03:dd:91
+            set-name: enp0s3
+            nameservers:
+                addresses: [51.144.230.81]
+ */
 
 type NameServers struct {
 	Addresses []string  `json:"addresses,omitempty"`
 }
 
 type Enp0s3 struct {
-	Dhcp4 bool `json:"dhcp4,omitempty"`
-	Match Match `json:"match,omitempty"`
-	SetName string `json:"set-name,omitempty"`
 	Nameservers NameServers `json:"nameservers,omitempty"`
 }
 
@@ -20,11 +26,29 @@ type Ethernets struct {
 }
 
 type Network struct {
-	Version int `json:"version,omitempty"`
+	//Version int `json:"version,omitempty"`
 	Ethernets Ethernets  `json:"ethernets,omitempty"`
 
 }
 
-type Neplan struct{
+type NetPlan struct{
 	Network Network `json:"network,omitempty"`
+}
+
+
+
+func GetInitNetPlan() * NetPlan{
+
+	return &NetPlan{
+		Network: Network{
+			Ethernets: Ethernets{
+				Enp0s3: Enp0s3{
+					Nameservers: NameServers{
+						Addresses: []string{},
+					},
+				},
+			},
+		},
+	}
+
 }

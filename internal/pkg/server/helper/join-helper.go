@@ -33,6 +33,7 @@ const (
 	accountCreateCmd = "AccountCreate"
 	accountPasswordSetCmd = "AccountPasswordSet"
 	vpnClientAddress = "localhost"
+	resolvedFile="/etc/systemd/resolved.conf"
 )
 const DefaultTimeout = time.Minute
 
@@ -127,7 +128,9 @@ func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
 
 }
 
+// Join
 func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error){
+	log.Info().Msg("Join edge controller")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
 
@@ -137,64 +140,54 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 		log.Error().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot create the connection with the Nalej platform")
 		return nil, err
 	}
+	log.Info().Msg("Join edge controller-1")
 	client := grpc_eic_api_go.NewEICClient(conn)
+
 
 	joinResponse, joinErr := client.Join(ctx, &grpc_inventory_manager_go.EICJoinRequest{
 		OrganizationId: j.OrganizationId,
 		Name: j.Name,
 		Labels: j.Labels,
 	})
+	log.Info().Msg("Join edge controller-2")
 	if joinErr != nil {
 		log.Error().Str("trace", conversions.ToDerror(joinErr).DebugReport()).Msg("error getting credentials")
 		return nil, joinErr
 	}
+	log.Info().Interface("credentials", joinResponse.Credentials).Msg("Join edge controller end")
 
 	return joinResponse.Credentials, nil
 }
 
-func (j * JoinHelper) writeDNSNameServer (ip string) error {
-	log.Info().Str("dns", ip).Msg("adding dns entry	")
-	auxFile := "/home/vagrant/aux.conf"
-	resolveConf := "/etc/resolv.conf"
-	name := fmt.Sprintf("nameserver %s", ip)
-
-	cmds := []string{
-		fmt.Sprintf("cat %s >> %s", resolveConf, auxFile),
-		fmt.Sprintf("echo '%s' >> %s",name,auxFile),
-		fmt.Sprintf("cp %s %s",auxFile,resolveConf),
-		fmt.Sprintf("rm %s", auxFile),
-	}
-	for _, inst := range cmds {
-		cmd := exec.Command("/bin/sh", "-c", inst)
-		err := cmd.Run()
-		if err != nil {
-			log.Error().Str("error", err.Error()).Str("inst", inst).Msg("error executing")
-			return err
-		}
-	}
-	//log.Fatal().Msg("stop!")
-
-	log.Info().Msg("dns added in /etc/resolv.conf file")
-
-	return nil
-}
-
-func (j * JoinHelper) Test() error  {
-
-
-	return nil
-}
-
+// ConfigureDNS adds a new dns entry in /etc/systemd/resolved.conf file
+// with the dns.nalej IP
 func (j * JoinHelper) ConfigureDNS () error {
 	log.Info().Msg("Configuring DNS")
 
-	ips, err := net.LookupIP(j.DnsUrl)
+	ips, err := net.LookupHost(j.DnsUrl)
 	if err != nil {
 		return err
 	}
-	for _, ip := range ips {
 
-		j.writeDNSNameServer(ip.String())
+	// update resolved.conf
+	// [Resolve]
+	// DNS=...
+	// Cache=no
+	cmdStr := fmt.Sprintf("echo \"DNS=%s\nCache=no\" >> %s", strings.Join(ips," "), resolvedFile)
+	cmd :=  exec.Command("/bin/sh", "-c", cmdStr)
+	err = cmd.Run()
+	if err != nil {
+		log.Error().Str("error", err.Error()).Msg("error executing")
+		return err
+	}
+
+	// restart the service
+	log.Info().Msg("restart systemd-resolved service")
+	cmd =  exec.Command("/bin/sh", "-c", "systemctl restart systemd-resolved")
+	err = cmd.Run()
+	if err != nil {
+		log.Error().Str("error", err.Error()).Msg("error restarting service systemd-resolved")
+		return err
 	}
 
 	return nil
@@ -267,7 +260,7 @@ func (j * JoinHelper) getSecureConnection() (*grpc.ClientConn, derrors.Error) {
 	log.Debug().Interface("creds", creds.Info()).Msg("Secure credentials")
 
 	targetAddress := fmt.Sprintf("%s:%d", j.JoinUrl, j.JoinPort)
-	log.Debug().Str("address", targetAddress).Msg("creating connection")
+	log.Info().Str("address", targetAddress).Msg("creating connection")
 
 	sConn, dErr := grpc.Dial(targetAddress, grpc.WithTransportCredentials(creds))
 	if dErr != nil {

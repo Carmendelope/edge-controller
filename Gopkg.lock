@@ -214,12 +214,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
+  digest = "1:78715f4ed019d19795e67eed1dc63f525461d925616b1ed02b72582c01362440"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = ""
-  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
-  version = "v0.0.3"
+  revision = "67fc4837d267bc9bfd6e47f77783fcc3dffc68de"
+  version = "v0.0.4"
 
 [[projects]]
   digest = "1:cbaf13cdbfef0e4734ed8a7504f57fe893d471d62a35b982bf6fb3f036449a66"
@@ -239,7 +239,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:aa38821ad1406a84f9577465ef53e56ca4d90745a710c753190bf7792d726c82"
+  digest = "1:c7da5579c766c6c7f70fb5c0ca8062114e7fcb6bb6b2cb163152a2ec9cec1846"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -254,15 +254,15 @@
     "trace",
   ]
   pruneopts = ""
-  revision = "3ec19112720433827bbce8be9342797f5a6aaaf9"
+  revision = "018c4d40a106a7ae83689758294fcd8d23850745"
 
 [[projects]]
   branch = "master"
-  digest = "1:6d1f08e90100b5b3ca8371d27f05d7b414345a59eeff1ecbe52b8db1a128b27a"
+  digest = "1:f8fc28f6666a22fb927b5a600299968203845989eba90b977525f3dcf37afd7e"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
-  revision = "cab07311ab81fc7f180fddf7410b604373b20a00"
+  revision = "c432e742b0af385916e013f6a34e9e73d139cf82"
 
 [[projects]]
   digest = "1:740b51a55815493a8d0f2b1e0d0ae48fe48953bf7eaf3fcc4198823bf67768c0"
@@ -303,7 +303,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:23c5753ad3960260962085191dd606b2517ce6b5b84a2fc2febe65303ab64b5e"
+  digest = "1:8dd1ca0dc50d8dd88324c6fe1c355a2006e312849704a702d7ca4a3bf28b065c"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
@@ -313,7 +313,7 @@
     "protobuf/field_mask",
   ]
   pruneopts = ""
-  revision = "995ef27e003f584103ecdd0f98e1a0cc9cbf3395"
+  revision = "bb713bdc0e5239f2b68e560efbe1c701a6fe78f9"
 
 [[projects]]
   digest = "1:afc1b03a6d5ba3cbb2e0a12133e734d472e4df3b65f06e600a3d57a4b82f26cc"

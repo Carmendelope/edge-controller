@@ -102,15 +102,15 @@ func (s *Service) Run() error {
 		log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error creating joinHelper")
 	}
 
-	//joinHelper.Test()
-
-
 	needJoin, nErr := joinHelper.NeedJoin(s.Configuration)
 	if nErr != nil {
 		log.Fatal().Str("error", conversions.ToDerror(nErr).DebugReport()).Msg("Error asking for join")
 	}
 
+	log.Info().Bool("need join", needJoin).Msg("Join")
+
 	if needJoin{
+		log.Info().Msg("Join needed!")
 		credentials, jErr := joinHelper.Join()
 		if jErr != nil {
 			log.Fatal().Str("error", conversions.ToDerror(jErr).DebugReport()).Msg("Error in join")
@@ -128,6 +128,7 @@ func (s *Service) Run() error {
 			log.Fatal().Str("error", conversions.ToDerror(errVpn).DebugReport()).Msg("enable to configure VPN")
 		}
 	}
+
 
 
 // TODO: get credentials.Hostname and load ManagementCluster
