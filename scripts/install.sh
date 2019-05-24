@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p /etc/edge-controller/
+
 # Dependencies installation
 apt-get update
 apt-get install -y build-essential
