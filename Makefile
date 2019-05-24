@@ -1,9 +1,9 @@
+include scripts/Makefile.common
+include scripts/Makefile.
 #
 #  Copyright 2018 Nalej
 # 
 
-include scripts/Makefile.golang
-include scripts/Makefile.vagrant
 
 .DEFAULT_GOAL := all
 
