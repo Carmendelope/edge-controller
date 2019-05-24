@@ -170,7 +170,7 @@ func (j * JoinHelper) ConfigureDNS () error {
 	// [Resolve]
 	// DNS=...
 	// Cache=no
-	cmdStr := fmt.Sprintf("echo \"DNS=%s\nCache=no\" >> %s", strings.Join(ips," "), resolvedFile)
+	cmdStr := fmt.Sprintf("echo \"DNS= %s 8.8.8.8 8.8.4.4\nCache=no\" >> %s", strings.Join(ips," "), resolvedFile)
 	cmd :=  exec.Command("/bin/sh", "-c", cmdStr)
 	err = cmd.Run()
 	if err != nil {
@@ -197,7 +197,6 @@ func (j * JoinHelper) GetIP () error{
 		"sysctl -p",
 		fmt.Sprintf("dhclient vpn_%s", nicName)}
 	for _, command := range cmds {
-		log.Info().Str("comando", command).Msg("COMANDO!")
 		cmd := exec.Command("/bin/sh", "-c", command)
 		err := cmd.Run()
 		if err != nil {
@@ -220,7 +219,7 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 	if err != nil {
 		log.Info().Str("error", err.Error()).Msg("error creating nicName")
 	}
-	vpnServer := fmt.Sprintf("/SERVER:vpn-server.%s:5555", credentials.Hostname)
+	vpnServer := fmt.Sprintf("/SERVER:%s", credentials.Hostname)
 	vpnUserName := fmt.Sprintf("/USERNAME:%s", credentials.Username)
 	vpnNicName :=  fmt.Sprintf("/NICNAME:%s", nicName)
 

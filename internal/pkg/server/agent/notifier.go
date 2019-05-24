@@ -1,12 +1,11 @@
 package agent
 
 import (
-	"context"
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
+	"github.com/nalej/grpc-edge-inventory-proxy-go"
 	"github.com/nalej/grpc-inventory-manager-go"
-	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
@@ -23,10 +22,10 @@ type Notifier struct {
 	// provider for the persistent operations.
 	provider asset.Provider
 	// mngtClient with the client that connects to the management cluster.
-	mngtClient grpc_inventory_manager_go.AgentClient
+	mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient
 }
 
-func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_inventory_manager_go.AgentClient) *Notifier {
+func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient) *Notifier {
 	return &Notifier{
 		notifyPeriod: notifyPeriod,
 		assetAlive: make(map[string]int64, 0),
@@ -52,7 +51,7 @@ func (n *Notifier) LaunchNotifierLoop() {
 }
 
 func (n * Notifier) sendAliveMessages() bool{
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	/*ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 
 	ids := make([]string, 0, len(n.assetAlive))
@@ -67,6 +66,7 @@ func (n * Notifier) sendAliveMessages() bool{
 		log.Warn().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot send alive messages to management cluster")
 		return false
 	}
+	*/
 	return true
 }
 
