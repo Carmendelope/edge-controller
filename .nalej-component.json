@@ -1,0 +1,12 @@
+{
+    "language": "golang",
+    "application_list": [
+        "edge-controller"
+    ],
+    "tools": [
+        "azure",
+        "k8s",
+        "docker",
+        "vagrant"
+    ]
+}
