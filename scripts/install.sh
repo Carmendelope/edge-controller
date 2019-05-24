@@ -4,7 +4,16 @@ mkdir -p /etc/edge-controller/
 
 # Dependencies installation
 apt-get update
-apt-get install -y build-essential
+apt-get install -y build-essential wget
+
+# InfluxDB installation
+wget -qO- https://repos.influxdata.com/influxdb.key | apt-key add -
+source /etc/lsb-release
+echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" | tee /etc/apt/sources.list.d/influxdb.list
+apt-get update
+apt-get install -y influxdb
+systemctl unmask influxdb.service
+systemctl start influxdb.service
 
 # SoftEther VPNClient installation
 curl -sLo /tmp/softether-vpnclient-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.29-9680-rtm/softether-vpnclient-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz
