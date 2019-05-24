@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
@@ -33,6 +34,7 @@ const (
 	accountPasswordSetCmd = "AccountPasswordSet"
 	vpnClientAddress = "localhost"
 	resolvedFile="/etc/systemd/resolved.conf"
+	credentialsFile = "/etc/edge-controller/credentials.json"
 )
 const DefaultTimeout = time.Minute
 
@@ -118,17 +120,19 @@ func getLabels (labelsStr string) (map[string]string, derrors.Error) {
 
 // NeedJoin returns true if the EIC needs to send the join message
 func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
-	_, err := os.Stat(config.BboltPath)
+	_, err := os.Stat(credentialsFile)
 	if os.IsNotExist(err) {
 		return true, nil
 	}
+	if !os.IsNotExist(err) {
+		return false, nil
+	}
 
-	return err != nil, err
-
+	return false, err
 }
 
-// Join
-func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error){
+// Join calls eic-api to join de EIC
+func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error){
 	log.Info().Msg("Join edge controller")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
@@ -153,7 +157,7 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.VPNCredentials, error)
 	}
 	log.Info().Interface("credentials", joinResponse.Credentials.Username).Msg("Join edge controller end")
 
-	return joinResponse.Credentials, nil
+	return joinResponse, nil
 }
 
 // ConfigureDNS adds a new dns entry in /etc/systemd/resolved.conf file
@@ -284,4 +288,57 @@ func (j * JoinHelper) getSecureConnection() (*grpc.ClientConn, derrors.Error) {
 		return nil, derrors.AsError(dErr, "cannot create connection with the eic-api service")
 	}
 	return sConn, nil
+}
+
+func (j * JoinHelper) SaveCredentials(edge grpc_inventory_manager_go.EICJoinResponse) error {
+
+	log.Info().Msg("saving credentials")
+
+	edgeJson, _ := json.Marshal(edge)
+	err := ioutil.WriteFile(credentialsFile, edgeJson, 0644)
+
+	return err
+}
+
+func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResponse, error) {
+
+	log.Info().Msg("loading credentials")
+
+	credentialsFile, err := ioutil.ReadFile(credentialsFile)
+	if err != nil {
+		return nil, err
+	}
+
+	credentials := &grpc_inventory_manager_go.EICJoinResponse{}
+
+	err = json.Unmarshal(credentialsFile, &credentials)
+	if err != nil {
+		return nil, err
+	}
+
+	return credentials, nil
+}
+
+func (j * JoinHelper) getVPNNicName() string{
+	return fmt.Sprintf("vpn_%s", nicName)
+}
+
+func (j * JoinHelper) GetVPNAddress() (*string, error){
+	iface, err := net.InterfaceByName(j.getVPNNicName())
+	if err != nil{
+		return nil, err
+	}
+
+	addresses, err := iface.Addrs()
+	if err != nil{
+		return nil, err
+	}
+	for _, addr := range addresses{
+		netIP, ok := addr.(*net.IPNet)
+		if ok && !netIP.IP.IsLoopback() && netIP.IP.To4() != nil{
+			ip := netIP.IP.String()
+			return &ip, nil
+		}
+	}
+	return nil, errors.New("cannot retrieve address list")
 }
