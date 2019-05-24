@@ -79,7 +79,6 @@ func (s*Service) GetProviders() * Providers{
 }
 
 func (s*Service) GetClients() * Clients{
-	// TODO Update type of connection
 	mngtConn, err := grpc.Dial(s.Configuration.ProxyURL, grpc.WithInsecure())
 	if err != nil {
 		log.Fatal().Str("error", err.Error()).Msg("cannot create connection with Edge Management URL")
