@@ -7,7 +7,6 @@ package entities
 import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-edge-controller-go"
-	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"time"
 )
@@ -87,10 +86,22 @@ func ValidAgentStartInfo(info * grpc_inventory_manager_go.AgentStartInfo) derror
 	return nil
 }
 
-func ValidAssetId(assetID *grpc_inventory_go.AssetId) derrors.Error{
-	if assetID.AssetId == ""{
+func ValidAgentCheckRequest(request *grpc_edge_controller_go.AgentCheckRequest) derrors.Error{
+	if request.AssetId == "" {
 		return derrors.NewInvalidArgumentError("asset_id cannot be empty")
 	}
+	if request.Timestamp == 0 {
+		return derrors.NewInvalidArgumentError("timestamp cannot be empty")
+	}
+
+	if len(request.PluginData) > 0 {
+		for _, d := range(request.PluginData) {
+			if d.Data == nil {
+				return derrors.NewInvalidArgumentError("plugin data cannot be empty")
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -1,3 +1,4 @@
+# No print when Makefile switches directory, clutters the output
 ifndef VERBOSE
 MAKEFLAGS += --no-print-directory
 endif
@@ -5,16 +6,10 @@ endif
 # Target directory
 TARGET=bin
 
-# Commands
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
-GOMETALINTER=gometalinter
-GOFMT=gofmt
-DEPCMD=dep
-AZURECLICMD=az
-DOCKERCMD=docker
+# Component variables
+VERSION=$(shell cat .version)
+COMMIT=$(shell git rev-parse HEAD)
+APPS=$(shell jq -r '.application_list[]' .nalej-component.json)
 
 # Docker variables
 ACR_DEVELOPMENT=nalejdev
@@ -41,78 +36,3 @@ ifeq ($(DOCKER_REGISTRY),public)
 endif
 
 REGISTRY_HOST=$(AZURE_CR).azurecr.io
-DOCKERFILE=Dockerfile
-
-# Component variables
-VERSION=$(shell cat .version)
-COMMIT=$(shell git rev-parse HEAD)
-LDFLAGS=-ldflags "-X main.MainVersion=${VERSION} -X main.MainCommit=${COMMIT}"
-
-# Build variables
-BUILDOS=linux
-BUILDARCH=amd64
-
-# Testing variables
-TESTFLAGS=
-COVERAGE_FILE=$(TARGET)/coverage.out
-
-# Recipes
-define go-build-recipe
-@for app in $(APPS); do \
-	if [ -d cmd/$$app ]; then \
-		${GOBUILDFLAGS} ${GOBUILD} $(LDFLAGS) -o ${DISTPATH}/$$app ./cmd/$$app ; \
-		echo " - Built $$app binary"; \
-	fi ; \
-done
-endef
-
-define dep-recipe
-@if [ ! -d vendor ]; then \
-	echo "vendor directory does not exist, creating it" ; \
-	mkdir vendor ; \
-fi ;
-@echo ">>> Updating dependencies"
-@dep ensure ${DEPOPTS}
-@echo ">>> Finished updating dependencies"
-endef
-
-define test-recipe
-@${GOTEST} ${TESTFLAGS} ./...
-endef
-
-define yaml-render-recipe
-@for app in $(1); do \
-	if [ -d components/$$app/$(2) ]; then \
-		cp components/$$app/$(2)/*.yaml $(TARGET)/yaml/$(2)/. ; \
-		cd $(TARGET)/yaml/$(2) && find . -type f -name '*.yaml' | xargs sed -i '' 's/__NPH_VERSION/$(VERSION)/g' && cd - > /dev/null ; \
-		cd $(TARGET)/yaml/$(2) && find . -type f -name '*.yaml' | xargs sed -i '' 's/__NPH_NAMESPACE/nalej/g' && cd - > /dev/null ; \
-		cd $(TARGET)/yaml/$(2) && find . -type f -name '*.yaml' | xargs sed -i '' 's/__NPH_REGISTRY_NAMESPACE/$(DOCKER_REPOSITORY)/g' && cd - > /dev/null ; \
-		cd $(TARGET)/yaml/$(2) && find . -type f -name '*.yaml' | xargs sed -i '' 's/__NPH_REGISTRY/$(REGISTRY_HOST)/g' && cd - > /dev/null ; \
-	fi ; \
-done
-endef
-
-define docker-build-recipe
-@for app in $(1); do \
-	if [ -f components/$$app/$(DOCKERFILE) ]; then \
-		if [ -d components/$$app/dockerenv ]; then \
-			cp -rv components/$$app/dockerenv $(TARGET)/$(BUILDOS)_$(BUILDARCH)/. ; \
-		fi ; \
-		$(DOCKERCMD) build --no-cache -t $(REGISTRY_HOST)/$(DOCKER_REPOSITORY)/$$app:$(VERSION) -f components/$$app/$(DOCKERFILE) $(TARGET)/$(BUILDOS)_$(BUILDARCH) && \
-		echo " - Built $$app Docker image using components/$$app/$(DOCKERFILE) and $(TARGET)/$(BUILDOS)_$(BUILDARCH) contents" ; \
-	else  \
-		echo " - $$app has no $(DOCKERFILE) file" ; \
-	fi ; \
-done
-endef
-
-define docker-push-recipe
-@for app in $(1); do \
-	if [ -f components/$$app/$(DOCKERFILE) ]; then \
-		$(DOCKERCMD) push $(REGISTRY_HOST)/$(DOCKER_REPOSITORY)/$$app:$(VERSION) && \
-		echo " - Pushed $$app Docker image to $(AZURE_CR) Docker registry" ; \
-	else  \
-		echo " - $$app has no $(DOCKERFILE) file" ; \
-	fi ; \
-done
-endef
