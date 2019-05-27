@@ -7,6 +7,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/nalej/authx-interceptors/pkg/interceptor/apikey"
+	interceptorConfig "github.com/nalej/authx-interceptors/pkg/interceptor/config"
 	assetProvider "github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
@@ -199,7 +201,16 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 
 	agentManager := agent.NewManager(s.Configuration, providers.assetProvider, *notifier, clients.inventoryProxyClient)
 	agentHandler := agent.NewHandler(agentManager)
-	grpcServer := grpc.NewServer()
+
+	apiKeyAccess := NewAgentTokenInterceptor(providers.assetProvider)
+
+	cfg := interceptorConfig.NewConfig(&interceptorConfig.AuthorizationConfig{
+		AllowsAll: false,
+		Permissions: map[string]interceptorConfig.Permission{
+			"/edge_controller.Agent/AgentJoin": {Must: []string{"APIKEY"}},
+		}}, "not-used", "authorization")
+
+	grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
 	grpc_edge_controller_go.RegisterAgentServer(grpcServer, agentHandler)
 
 	if s.Configuration.Debug{

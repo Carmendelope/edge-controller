@@ -38,8 +38,8 @@ type Provider interface {
 	GetAssetByToken(token string) (*entities.AgentJoinInfo, derrors.Error)
 	// AddJoinToken adds a new join token for agents
 	AddJoinToken(joinToken string) (*entities.JoinToken, derrors.Error)
-	// CheckJoinJoin checks if a join token is valid
-	CheckJoinJoin(joinToken string) (bool, derrors.Error)
+	// CheckJoinToken checks if a join token is valid
+	CheckJoinToken(joinToken string) (bool, derrors.Error)
 	// Clear all elements
 	Clear() derrors.Error
 }

@@ -183,8 +183,8 @@ func (m *MockupAssetProvider) AddJoinToken(joinToken string) (*entities.JoinToke
 	return &entities.JoinToken{Token:joinToken, ExpiredOn:expired }, nil
 }
 
-// CheckJoinJoin checks if a join token is valid
-func (m *MockupAssetProvider) CheckJoinJoin(joinToken string) (bool, derrors.Error){
+// CheckJoinToken checks if a join token is valid
+func (m *MockupAssetProvider) CheckJoinToken(joinToken string) (bool, derrors.Error){
 	m.Lock()
 	defer m.Unlock()
 	expire, exists := m.joinToken[joinToken]

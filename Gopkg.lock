@@ -57,6 +57,17 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:1e1800b6354ac0f6c22ada1f0fbc3f086a35bc5d591a88f3a3474c7357cf483b"
+  name = "github.com/nalej/authx-interceptors"
+  packages = [
+    "pkg/interceptor/apikey",
+    "pkg/interceptor/config",
+  ]
+  pruneopts = ""
+  revision = "f6e10135723fef56bd95b181abdb3a0410cc3bd1"
+
+[[projects]]
   digest = "1:0cc441f3dfe124dd74f44dd7e466dfc17cc7edff468094fbc3847a96b5ebf6f7"
   name = "github.com/nalej/derrors"
   packages = ["."]
@@ -411,6 +422,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/nalej/authx-interceptors/pkg/interceptor/apikey",
+    "github.com/nalej/authx-interceptors/pkg/interceptor/config",
     "github.com/nalej/derrors",
     "github.com/nalej/grpc-common-go",
     "github.com/nalej/grpc-edge-controller-go",

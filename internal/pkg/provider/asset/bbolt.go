@@ -523,8 +523,8 @@ func (b *BboltAssetProvider) AddJoinToken(joinToken string)  (*entities.JoinToke
 	return &entities.JoinToken{Token:joinToken, ExpiredOn:expired}, nil
 }
 
-// CheckJoinJoin checks if a join token is valid
-func (b *BboltAssetProvider) CheckJoinJoin(joinToken string) (bool, derrors.Error){
+// CheckJoinToken checks if a join token is valid
+func (b *BboltAssetProvider) CheckJoinToken(joinToken string) (bool, derrors.Error){
 	b.Lock()
 	defer b.Unlock()
 
