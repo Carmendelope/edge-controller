@@ -209,7 +209,7 @@ func RunTest(provider Provider){
 			token := uuid.NewV4().String()
 			_, err := provider.AddJoinToken(token)
 			gomega.Expect(err).To(gomega.Succeed())
-			result, err := provider.CheckJoinJoin(token)
+			result, err := provider.CheckJoinToken(token)
 			gomega.Expect(err).To(gomega.Succeed())
 			gomega.Expect(result).Should(gomega.BeTrue())
 		})
