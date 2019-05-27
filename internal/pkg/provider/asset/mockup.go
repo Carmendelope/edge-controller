@@ -170,14 +170,17 @@ func (m *MockupAssetProvider) GetAssetByToken(token string) (*entities.AgentJoin
 }
 
 // AddJoinToken adds a new join token for agents
-func (m *MockupAssetProvider) AddJoinToken(joinToken string) derrors.Error{
+func (m *MockupAssetProvider) AddJoinToken(joinToken string) (*entities.JoinToken, derrors.Error){
 	m.Lock()
 	defer m.Unlock()
 	if m.unsafeExistJoinToken(joinToken){
-		return derrors.NewAlreadyExistsError("agent join token already exists")
+		return nil, derrors.NewAlreadyExistsError("agent join token already exists")
 	}
-	m.joinToken[joinToken] = time.Now().Add(AgentJoinTokenTTL).Unix()
-	return nil
+
+	expired := time.Now().Add(AgentJoinTokenTTL).Unix()
+	m.joinToken[joinToken] = expired
+
+	return &entities.JoinToken{Token:joinToken, ExpiredOn:expired }, nil
 }
 
 // CheckJoinJoin checks if a join token is valid

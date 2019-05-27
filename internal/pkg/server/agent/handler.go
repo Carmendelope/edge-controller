@@ -8,6 +8,7 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-edge-controller-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
@@ -74,4 +75,15 @@ func (h *Handler) CallbackAgentOperation(ctx context.Context, response *grpc_inv
 	return &grpc_common_go.Success{}, nil
 }
 
+func (h *Handler) CreateAgentJoinToken(ctx context.Context, edge *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error) {
+	err := entities.ValidEdgeControllerID(edge)
+	if err != nil{
+		return nil, conversions.ToGRPCError(err)
+	}
+	token, err := h.Manager.CreateAgentJoinToken(edge)
+	if err != nil {
+		return nil, conversions.ToGRPCError(err)
+	}
 
+	return token, nil
+}

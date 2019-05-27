@@ -5,13 +5,17 @@
 package agent
 
 import (
+	"context"
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
+	"github.com/satori/go.uuid"
 	"time"
 )
 
@@ -32,7 +36,7 @@ func NewManager(cfg config.Config, assetProvider asset.Provider, notifier Notifi
 
 func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) (*grpc_inventory_manager_go.AgentJoinResponse, derrors.Error) {
 	log.Debug().Str("agentID", request.AgentId).Msg("agent request join")
-	/*ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	toSend := &grpc_inventory_manager_go.AgentJoinRequest{
 		OrganizationId:       m.config.OrganizationId,
@@ -51,7 +55,7 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 	m.provider.AddJoinToken(response.Token)
 	log.Debug().Str("agentID", request.AgentId).Str("assetID", response.AssetId).Msg("Agent joined successfully")
 	return response, nil
-	*/
+
 	return nil, nil
 }
 
@@ -98,4 +102,21 @@ func (m * Manager) CallbackAgentOperation(response *grpc_inventory_manager_go.Ag
 		return err
 	}
 	return nil
+}
+
+func (m * Manager) CreateAgentJoinToken(edge *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, derrors.Error) {
+
+	token := uuid.NewV4().String()
+
+	tokenInfo, err := m.provider.AddJoinToken(token)
+	if err != nil {
+		return nil, err
+	}
+	return &grpc_inventory_manager_go.AgentJoinToken{
+		OrganizationId: edge.OrganizationId,
+		EdgeControllerId: edge.EdgeControllerId,
+		Token: token,
+		ExpiresOn: tokenInfo.ExpiredOn,
+	}, nil
+
 }

@@ -202,12 +202,12 @@ func RunTest(provider Provider){
 	ginkgo.Context("Join tokens", func(){
 		ginkgo.It("should be able add a join token", func(){
 		    token := uuid.NewV4().String()
-		    err := provider.AddJoinToken(token)
+		    _, err := provider.AddJoinToken(token)
 		    gomega.Expect(err).To(gomega.Succeed())
 		})
 		ginkgo.It("should be able to check a join token", func(){
 			token := uuid.NewV4().String()
-			err := provider.AddJoinToken(token)
+			_, err := provider.AddJoinToken(token)
 			gomega.Expect(err).To(gomega.Succeed())
 			result, err := provider.CheckJoinJoin(token)
 			gomega.Expect(err).To(gomega.Succeed())
