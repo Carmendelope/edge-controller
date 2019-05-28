@@ -124,12 +124,12 @@
   version = "v0.0.10"
 
 [[projects]]
-  digest = "1:8decbf011af9acebb6a263a8f95117eed067e33fd362e6606dc3f8260b87e8fb"
+  digest = "1:5d632f2fd5da4e235c661ad6fe83ffdfa23e726e70c47cc75b88bc7b10f9adc0"
   name = "github.com/nalej/grpc-edge-inventory-proxy-go"
   packages = ["."]
   pruneopts = ""
-  revision = "c07e3f8491599c33c538eef2740438c59915a17c"
-  version = "v0.0.6"
+  revision = "fdf5c0aef64381c2838f778f4cb0beb951eb48b1"
+  version = "v0.0.7"
 
 [[projects]]
   digest = "1:791a72ce09d30b99964d4f6d422df87a1208d5f38a6cb4294def51f916a868f1"
@@ -140,20 +140,20 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:09fb41dc9fd129e4021f026f8be8aa8d36e2b9a55cf2c66d5289fe8d726845aa"
+  digest = "1:32472a22d1ea8895060e3059fc01699ed83b3bb79ed8c4f3d13a279040d9d01f"
   name = "github.com/nalej/grpc-inventory-go"
   packages = ["."]
   pruneopts = ""
-  revision = "b3f09bbfc45a996be12f67d8cb5c0820d94c7e3a"
-  version = "v0.0.4"
+  revision = "bafe7bb86a9960c8056b36b9ae31d36154ab48f9"
+  version = "v0.0.6"
 
 [[projects]]
-  digest = "1:ec0e621ef55ce24afbebeba6db6bd89c994c2c3042cafe4a84bfa1d332b3bb49"
+  digest = "1:391482aa3d7423b772ed96e54b331e5c56643a5b2da8a3ec2cf5d00bdfd236a8"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "391548f0b3765c077b9ff1eda6b511fc12a597ff"
-  version = "v0.0.17"
+  revision = "e1dd0df4f97deeb3c76a25897ffce08bf3c3ae54"
+  version = "v0.0.18"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -293,11 +293,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:075560f12f65f4dd9499fa6ce385a0ffe61039294c3f2e3fa29389fde41721cb"
+  digest = "1:67eb682bc10f1293b906694c64363dca71bf4ee2f8965518727c47d080422af5"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
-  revision = "791d8a0f4d093bd8fe272dea2cd28991154796fb"
+  revision = "adf421d2caf4ffcf74142ff5fb9ee323b21a819e"
 
 [[projects]]
   digest = "1:740b51a55815493a8d0f2b1e0d0ae48fe48953bf7eaf3fcc4198823bf67768c0"

@@ -14,6 +14,7 @@ import (
 
 // DefaultNotificationPeriod defines how often by default the EIC sends data back to the management.
 const DefaultNotificationPeriod = "30s"
+const DefaultAlivePeriod = "5m"
 
 var cfg = config.Config{}
 
@@ -33,6 +34,7 @@ var runCmd = &cobra.Command{
 func init() {
 
 	d, _ := time.ParseDuration(DefaultNotificationPeriod)
+	a, _ := time.ParseDuration(DefaultAlivePeriod)
 
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().IntVar(&cfg.Port, "port", 5577, "Port to receive management communications")
@@ -45,4 +47,5 @@ func init() {
 	runCmd.Flags().IntVar(&cfg.EicApiPort, "eicapiPort", 443, "Port to send the join message")
 	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
 	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
+	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
 }

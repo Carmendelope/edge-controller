@@ -16,13 +16,17 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
+	"time"
 )
+
+const DefaultTimeout = 30 * time.Second
 
 // Service structure containing the configuration and gRPC server.
 type Service struct {
@@ -179,6 +183,9 @@ func (s *Service) Run() error {
 		Ip: *ip,
 	})
 
+	// launch the alive loop
+	go s.aliveLoop()
+
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error starting EIC")
 	}
@@ -186,6 +193,30 @@ func (s *Service) Run() error {
 	go s.LaunchEICServer(providers, clients)
 
 	return s.LaunchAgentServer(providers, clients)
+}
+
+// aliveLoop sends alive message to proxy
+func (s*Service) aliveLoop() {
+
+	proxyClient := s.GetClients().inventoryProxyClient
+	ticker := time.NewTicker(s.Configuration.AlivePeriod)
+
+	for {
+		select {
+			case <- ticker.C:
+				log.Info().Msg("alive")
+				// Send alive message to proxy
+				ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+				_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
+					OrganizationId: s.Configuration.OrganizationId,
+					EdgeControllerId: s.Configuration.EdgeControllerId,
+				})
+				if err != nil {
+					log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error sending the alive message")
+				}
+				cancel()
+		}
+	}
 }
 
 func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error{
@@ -214,7 +245,6 @@ func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error
 	return nil
 }
 
-// TODO:
 func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) error{
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.AgentPort))
 	if err != nil {
@@ -222,7 +252,8 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 	}
 
 
-	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient)
+	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient,
+		s.Configuration.OrganizationId, s.Configuration.EdgeControllerId)
 	go notifier.LaunchNotifierLoop()
 
 	agentManager := agent.NewManager(s.Configuration, providers.assetProvider, *notifier, clients.inventoryProxyClient)
