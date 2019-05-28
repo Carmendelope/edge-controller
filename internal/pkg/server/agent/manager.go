@@ -11,11 +11,9 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
-	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
-	"github.com/satori/go.uuid"
 	"time"
 )
 
@@ -102,21 +100,4 @@ func (m * Manager) CallbackAgentOperation(response *grpc_inventory_manager_go.Ag
 		return err
 	}
 	return nil
-}
-
-func (m * Manager) CreateAgentJoinToken(edge *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, derrors.Error) {
-
-	token := uuid.NewV4().String()
-
-	tokenInfo, err := m.provider.AddJoinToken(token)
-	if err != nil {
-		return nil, err
-	}
-	return &grpc_inventory_manager_go.AgentJoinToken{
-		OrganizationId: edge.OrganizationId,
-		EdgeControllerId: edge.EdgeControllerId,
-		Token: token,
-		ExpiresOn: tokenInfo.ExpiredOn,
-	}, nil
-
 }

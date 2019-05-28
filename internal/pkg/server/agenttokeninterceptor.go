@@ -3,8 +3,6 @@ package server
 import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
-	"github.com/rs/zerolog/log"
-	"strings"
 )
 
 type AgentTokenInterceptor struct {
@@ -23,50 +21,39 @@ func (at *AgentTokenInterceptor) Connect() derrors.Error {
 
 
 // validJoinToken
-func (at *AgentTokenInterceptor) validJoinToken(organizationID string, token string)  derrors.Error {
+func (at *AgentTokenInterceptor) validJoinToken(token string)  derrors.Error {
 
 	check, err := at.tokenProvider.CheckJoinToken(token)
 	if err != nil {
 		return  err
 	}
 	if check == false {
-		return derrors.NewUnauthenticatedError("invalid join token")
+		return derrors.NewUnauthenticatedError("invalid token")
 	}
 
 	return nil
 }
 
-// validAgentToken
-func (at *AgentTokenInterceptor) validAgentToken(organizationID string, assetID string, token string) derrors.Error {
+// validAgentToken checks if the token
+func (at *AgentTokenInterceptor) validAgentToken(token string) derrors.Error {
 
-	asset, err := at.tokenProvider.GetAssetByToken(token)
+	_, err := at.tokenProvider.GetAssetByToken(token)
 	if err != nil {
 		return  err
 	}
-	if asset.AssetId != assetID {
-		return derrors.NewUnauthenticatedError("invalid agent token")
-	}
 
 	return nil
 }
 
-// IsValid First check if the token is valid
-// AgentToken: has three fields separated by # (organization_id#asset_id#token)
-// JoinToken: has two fields separated by # (organization_id#token)
+// IsValid First check if the token is valid ( First check if the token is a valid agent token, if not check if it is a valid join token)
 func (at *AgentTokenInterceptor) IsValid (tokenInfo string) derrors.Error {
 
-	splitToken := strings.Split(tokenInfo, "#")
+	// check if is a valid agent token
+	err := at.validAgentToken(tokenInfo)
+	// if not check if it is a valid join token
+	if err != nil {
+		return at.validJoinToken(tokenInfo)
 
-	if len(splitToken) != 2 && len(splitToken) != 3{
-		log.Warn().Str("tokenInfo", tokenInfo).Msg("cannot validate token. Error in token format")
-		return derrors.NewUnauthenticatedError("cannot validate token")
-	}
-	// JoinToken
-	if len(splitToken) == 2 {
-		at.validJoinToken(splitToken[0], splitToken[1])
-	}
-	if len(splitToken) == 3 {
-		return at.validAgentToken(splitToken[0], splitToken[1], splitToken[2])
 	}
 	return nil
 }
