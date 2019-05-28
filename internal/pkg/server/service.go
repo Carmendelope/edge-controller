@@ -199,19 +199,23 @@ func (s *Service) Run() error {
 func (s*Service) aliveLoop() {
 
 	proxyClient := s.GetClients().inventoryProxyClient
+	ticker := time.NewTicker(s.Configuration.AlivePeriod)
 
-	for true {
-		// Send alive message to proxy
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-		_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
-			OrganizationId: s.Configuration.OrganizationId,
-			EdgeControllerId: s.Configuration.EdgeControllerId,
-		})
-		if err != nil {
-			log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error sending the alive message")
+	for {
+		select {
+			case <- ticker.C:
+				log.Info().Msg("alive")
+				// Send alive message to proxy
+				ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+				_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
+					OrganizationId: s.Configuration.OrganizationId,
+					EdgeControllerId: s.Configuration.EdgeControllerId,
+				})
+				if err != nil {
+					log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error sending the alive message")
+				}
+				cancel()
 		}
-		cancel()
-		time.Sleep(s.Configuration.AlivePeriod)
 	}
 }
 
