@@ -57,6 +57,17 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:1e1800b6354ac0f6c22ada1f0fbc3f086a35bc5d591a88f3a3474c7357cf483b"
+  name = "github.com/nalej/authx-interceptors"
+  packages = [
+    "pkg/interceptor/apikey",
+    "pkg/interceptor/config",
+  ]
+  pruneopts = ""
+  revision = "f6e10135723fef56bd95b181abdb3a0410cc3bd1"
+
+[[projects]]
   digest = "1:0cc441f3dfe124dd74f44dd7e466dfc17cc7edff468094fbc3847a96b5ebf6f7"
   name = "github.com/nalej/derrors"
   packages = ["."]
@@ -81,6 +92,14 @@
   version = "v0.0.30"
 
 [[projects]]
+  digest = "1:0bad099051ea5df46222752d38f98673d2ccec88ab40e30a9ec3d1473cbcd634"
+  name = "github.com/nalej/grpc-device-controller-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "a17911a9960d5b17ac0b40f4613a07258b831e69"
+  version = "v0.0.8"
+
+[[projects]]
   digest = "1:d7695afbf2039f4c504d7e7b3ded13328f044c85bfab3ea999cc0605aebf8c6b"
   name = "github.com/nalej/grpc-device-go"
   packages = ["."]
@@ -89,20 +108,28 @@
   version = "v0.0.34"
 
 [[projects]]
-  digest = "1:4e71135e6f18ca96c4387944ef965237c1c4fcbc90ca00128fc618a63289cd90"
+  digest = "1:c791d2da114389967d62c35fc298182fba94a24021c7a0df40b1f91e576b55d4"
+  name = "github.com/nalej/grpc-device-manager-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "f38aaa199f155566b27d097c6410d62b9a9d1d4a"
+  version = "v0.0.9"
+
+[[projects]]
+  digest = "1:933e4bc7861918867dc10f8067b8d58162d601e452638c87ee67a62fbda3c898"
   name = "github.com/nalej/grpc-edge-controller-go"
   packages = ["."]
   pruneopts = ""
-  revision = "26e4cbea356c710737c007e6adaf9839c2a0acbd"
-  version = "v0.0.6"
+  revision = "a68b7abfd5a6379c371c094986d58cbd6d024400"
+  version = "v0.0.10"
 
 [[projects]]
-  digest = "1:4219d77340155a2aec52b2123c9407fff763f52be316c786853d9eb99f5708ec"
+  digest = "1:8decbf011af9acebb6a263a8f95117eed067e33fd362e6606dc3f8260b87e8fb"
   name = "github.com/nalej/grpc-edge-inventory-proxy-go"
   packages = ["."]
   pruneopts = ""
-  revision = "d8f746776ca8b88b0828ea7d4e3f1790fbee015f"
-  version = "v0.0.2"
+  revision = "c07e3f8491599c33c538eef2740438c59915a17c"
+  version = "v0.0.6"
 
 [[projects]]
   digest = "1:791a72ce09d30b99964d4f6d422df87a1208d5f38a6cb4294def51f916a868f1"
@@ -121,12 +148,12 @@
   version = "v0.0.4"
 
 [[projects]]
-  digest = "1:9ad117a59388dbf7ce2e8932d2873d3ef9832894929bc415e8b35ec002f6d305"
+  digest = "1:ec0e621ef55ce24afbebeba6db6bd89c994c2c3042cafe4a84bfa1d332b3bb49"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "f16eaabf9b26c15027ae746f21f79a96b539c643"
-  version = "v0.0.12"
+  revision = "391548f0b3765c077b9ff1eda6b511fc12a597ff"
+  version = "v0.0.17"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -266,11 +293,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:773e3db0d0569aadf922a0eb5ada3af88b70be00261467dd2533114eb9a002b1"
+  digest = "1:075560f12f65f4dd9499fa6ce385a0ffe61039294c3f2e3fa29389fde41721cb"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
-  revision = "0e01d883c5c5e3a1741118a9962f68d71b0a6ed4"
+  revision = "791d8a0f4d093bd8fe272dea2cd28991154796fb"
 
 [[projects]]
   digest = "1:740b51a55815493a8d0f2b1e0d0ae48fe48953bf7eaf3fcc4198823bf67768c0"
@@ -395,11 +422,14 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/nalej/authx-interceptors/pkg/interceptor/apikey",
+    "github.com/nalej/authx-interceptors/pkg/interceptor/config",
     "github.com/nalej/derrors",
     "github.com/nalej/grpc-common-go",
     "github.com/nalej/grpc-edge-controller-go",
     "github.com/nalej/grpc-edge-inventory-proxy-go",
     "github.com/nalej/grpc-eic-api-go",
+    "github.com/nalej/grpc-inventory-go",
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/onsi/ginkgo",

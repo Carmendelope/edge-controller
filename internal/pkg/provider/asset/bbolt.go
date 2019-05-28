@@ -486,19 +486,20 @@ func (b *BboltAssetProvider) GetAssetByToken(token string) (*entities.AgentJoinI
 }
 
 // AddJoinToken adds a new join token for agents
-func (b *BboltAssetProvider) AddJoinToken(joinToken string) derrors.Error{
+func (b *BboltAssetProvider) AddJoinToken(joinToken string)  (*entities.JoinToken, derrors.Error){
 
 	b.Lock()
 	defer b.Unlock()
 
 	checkErr := b.CheckConnection()
 	if checkErr != nil {
-		return checkErr
+		return nil, checkErr
 	}
 
-	toAddBytes, err := json.Marshal(time.Now().Add(AgentJoinTokenTTL).Unix())
+	expired := time.Now().Add(AgentJoinTokenTTL).Unix()
+	toAddBytes, err := json.Marshal(expired)
 	if err != nil {
-		return conversions.ToDerror(err)
+		return nil, conversions.ToDerror(err)
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -516,14 +517,14 @@ func (b *BboltAssetProvider) AddJoinToken(joinToken string) derrors.Error{
 	})
 
 	if err != nil {
-		return conversions.ToDerror(err)
+		return nil, conversions.ToDerror(err)
 	}
 
-	return nil
+	return &entities.JoinToken{Token:joinToken, ExpiredOn:expired}, nil
 }
 
-// CheckJoinJoin checks if a join token is valid
-func (b *BboltAssetProvider) CheckJoinJoin(joinToken string) (bool, derrors.Error){
+// CheckJoinToken checks if a join token is valid
+func (b *BboltAssetProvider) CheckJoinToken(joinToken string) (bool, derrors.Error){
 	b.Lock()
 	defer b.Unlock()
 

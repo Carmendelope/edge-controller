@@ -7,9 +7,12 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/nalej/authx-interceptors/pkg/interceptor/apikey"
+	interceptorConfig "github.com/nalej/authx-interceptors/pkg/interceptor/config"
 	assetProvider "github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
+	"github.com/nalej/edge-controller/internal/pkg/server/eic"
 	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
@@ -180,11 +183,34 @@ func (s *Service) Run() error {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error starting EIC")
 	}
 
+	go s.LaunchEICServer(providers, clients)
+
 	return s.LaunchAgentServer(providers, clients)
 }
 
-func (s*Service) LaunchEICServer() error{
-	// TODO Launch EIC Server
+func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error{
+
+	EICLis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.Port))
+	if err != nil {
+		log.Fatal().Errs("failed to listen: %v", []error{err})
+	}
+
+	eicManager := eic.NewManager(s.Configuration, providers.assetProvider)
+	eicHandler := eic.NewHandler(eicManager)
+
+	grpcEICServer := grpc.NewServer()
+	grpc_edge_controller_go.RegisterEICServer(grpcEICServer,eicHandler)
+	if s.Configuration.Debug{
+		log.Info().Msg("Enabling gRPC server reflection")
+		// Register reflection service on gRPC server.
+		reflection.Register(grpcEICServer)
+	}
+
+	log.Info().Int("port", s.Configuration.Port).Msg("Launching gRPC server")
+	if err := grpcEICServer.Serve(EICLis); err != nil {
+		log.Fatal().Errs("failed to serve: %v", []error{err})
+	}
+
 	return nil
 }
 
@@ -194,13 +220,25 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 	if err != nil {
 		log.Fatal().Errs("failed to listen: %v", []error{err})
 	}
+
+
 	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient)
 	go notifier.LaunchNotifierLoop()
 
 	agentManager := agent.NewManager(s.Configuration, providers.assetProvider, *notifier, clients.inventoryProxyClient)
 	agentHandler := agent.NewHandler(agentManager)
-	grpcServer := grpc.NewServer()
+
+	apiKeyAccess := NewAgentTokenInterceptor(providers.assetProvider)
+
+	cfg := interceptorConfig.NewConfig(&interceptorConfig.AuthorizationConfig{
+		AllowsAll: false,
+		Permissions: map[string]interceptorConfig.Permission{
+			"/edge_controller.Agent/AgentJoin": {Must: []string{"APIKEY"}},
+		}}, "not-used", "authorization")
+
+	grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
 	grpc_edge_controller_go.RegisterAgentServer(grpcServer, agentHandler)
+
 
 	if s.Configuration.Debug{
 		log.Info().Msg("Enabling gRPC server reflection")
@@ -212,5 +250,7 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal().Errs("failed to serve: %v", []error{err})
 	}
+
+
 	return nil
 }
