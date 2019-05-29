@@ -8,6 +8,7 @@ import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/version"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"time"
 )
 
@@ -45,6 +46,9 @@ type Config struct {
 	//AlivePeriod determines how often the EIC sends an alive message to the management cluster
 	AlivePeriod time.Duration
 
+	// Plugin configuration - using Viper to be flexible so it's easy to
+	// add new plugins
+	PluginConfig *viper.Viper
 }
 
 // Validate the current configuration.

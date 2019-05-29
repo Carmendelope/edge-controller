@@ -183,6 +183,12 @@ func (s *Service) Run() error {
 		Ip: *ip,
 	})
 
+	// Start plugins
+	derr := startRegisteredPlugins(s.Configuration.PluginConfig)
+	if derr != nil {
+		log.Fatal().Str("error", derr.DebugReport()).Msg("error starting plugins")
+	}
+
 	// launch the alive loop
 	go s.aliveLoop()
 
