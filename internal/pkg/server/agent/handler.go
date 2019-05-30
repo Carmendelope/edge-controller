@@ -74,4 +74,3 @@ func (h *Handler) CallbackAgentOperation(ctx context.Context, response *grpc_inv
 	return &grpc_common_go.Success{}, nil
 }
 
-

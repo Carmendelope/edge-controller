@@ -42,6 +42,8 @@ type Config struct {
 	Labels string
 	// ProxyURL with the URL required to connect to the PROXY
 	ProxyURL string
+	//AlivePeriod determines how often the EIC sends an alive message to the management cluster
+	AlivePeriod time.Duration
 
 }
 
@@ -69,6 +71,9 @@ func (conf * Config) Validate() derrors.Error {
 	}
 	if conf.Name == "" {
 		return derrors.NewInvalidArgumentError("name must be specified")
+	}
+	if conf.AlivePeriod.Seconds() < 1 {
+		return derrors.NewInvalidArgumentError("alivePeriod should be minimum 1s")
 	}
 
 	return nil

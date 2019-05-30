@@ -7,6 +7,7 @@ package entities
 import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-edge-controller-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"time"
 )
@@ -182,3 +183,25 @@ func (aor * AgentOpResponse) ToGRPC() * grpc_inventory_manager_go.AgentOpRespons
 		Info:                 aor.Info,
 	}
 }
+
+type JoinToken struct{
+	// Token that the agent needs to send for further requests.
+	Token string   `json:"token,omitempty"`
+	// ExpiredOn with information about when the token expires
+	ExpiredOn int64 `json:"expired_on"`
+	// OrganizationId with the organization identifier.
+	// OrganizationId string `json:"organization_id,omitempty"`
+	// EdgeControllerId with the EIC identifier that facilitated the operation.
+	// EdgeControllerId string `json:"edge_controller_id,omitempty"`
+}
+
+func ValidEdgeControllerID(edge *grpc_inventory_go.EdgeControllerId) derrors.Error{
+	if edge.OrganizationId == ""{
+		return derrors.NewInvalidArgumentError("organization_id cannot be empty")
+	}
+	if edge.EdgeControllerId == ""{
+		return derrors.NewInvalidArgumentError("edge_controller_id cannot be empty")
+	}
+	return nil
+}
+

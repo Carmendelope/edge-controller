@@ -3,3 +3,59 @@
  */
 
 package eic
+
+import (
+	"context"
+	"github.com/nalej/edge-controller/internal/pkg/entities"
+	"github.com/nalej/grpc-common-go"
+	"github.com/nalej/grpc-inventory-go"
+	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
+	"github.com/rs/zerolog/log"
+)
+
+// Handler structure for the cluster requests.
+type Handler struct {
+	Manager Manager
+}
+
+// NewHandler creates a new Handler with a linked manager.
+func NewHandler(manager Manager) *Handler{
+	return &Handler{manager}
+}
+
+// Unlink the receiving EIC.
+func (h *Handler)Unlink(_ context.Context, in *grpc_common_go.Empty) (*grpc_common_go.Success, error) {
+	return nil, nil
+}
+// TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
+// next connection.
+func (h *Handler)TriggerAgentOperation(_ context.Context, request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
+	return nil, nil
+}
+// Configure changes specific configuration options of the Edge Controller
+// and/or Edge Controller plugins
+func (h *Handler)Configure(_ context.Context, request *grpc_inventory_manager_go.ConfigureEICRequest) (*grpc_common_go.Success, error) {
+	return nil, nil
+}
+// ListMetrics returns available metrics for a certain selection of assets
+func (h *Handler)ListMetrics(_ context.Context, selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
+	return nil, nil
+}
+// QueryMetrics retrieves the monitoring data of assets local to this
+// Edge Controller
+func (h *Handler)QueryMetrics(_ context.Context, request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error){
+	return nil, nil
+}
+// CreateAgentJoinToken generates a JoinToken to allow an agent to join to a controller
+func (h *Handler)CreateAgentJoinToken(_ context.Context, edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error){
+
+	log.Info().Interface("edgeControllerID", edgeControllerID).Msg("creating agent join token")
+	vErr := entities.ValidEdgeControllerID(edgeControllerID)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+
+	return h.Manager.CreateAgentJoinToken(edgeControllerID)
+
+}

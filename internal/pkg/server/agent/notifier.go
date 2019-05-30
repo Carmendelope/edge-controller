@@ -1,11 +1,13 @@
 package agent
 
 import (
+	"context"
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
@@ -23,14 +25,21 @@ type Notifier struct {
 	provider asset.Provider
 	// mngtClient with the client that connects to the management cluster.
 	mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient
+	// organizationID with the organization identifier
+	organizationID string
+	// edgeControllerID with de EIC identifier
+	edgeControllerID string
 }
 
-func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient) *Notifier {
+func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient,
+	organizationID string, edgeControllerID string) *Notifier {
 	return &Notifier{
 		notifyPeriod: notifyPeriod,
 		assetAlive: make(map[string]int64, 0),
 		provider: provider,
 		mngtClient: mngtClient,
+		organizationID: organizationID,
+		edgeControllerID: edgeControllerID,
 	}
 }
 
@@ -51,22 +60,20 @@ func (n *Notifier) LaunchNotifierLoop() {
 }
 
 func (n * Notifier) sendAliveMessages() bool{
-	/*ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 
-	ids := make([]string, 0, len(n.assetAlive))
-	for k := range n.assetAlive{
-		ids = append(ids, k)
+	messages := &grpc_inventory_manager_go.AgentsAlive{
+		OrganizationId: n.organizationID,
+		EdgeControllerId: n.edgeControllerID,
+		Agents: n.assetAlive,
 	}
-	agentIds := &grpc_inventory_manager_go.AgentIds{
-		Ids: ids,
-	}
-	_, err := n.mngtClient.LogAgentAlive(ctx, agentIds)
+	_, err := n.mngtClient.LogAgentAlive(ctx, messages)
 	if err != nil{
 		log.Warn().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot send alive messages to management cluster")
 		return false
 	}
-	*/
+
 	return true
 }
 
