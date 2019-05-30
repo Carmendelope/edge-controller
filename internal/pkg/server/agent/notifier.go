@@ -58,10 +58,13 @@ func (n *Notifier) AgentAlive(assetID string, ip string) {
 
 	// check IP
 	oldIP, exists := n.AssetIP[assetID]
-	if ! exists || ip != oldIP {
+	if !exists {
+		n.AssetNewIP[assetID] = ip
+		n.AssetIP[assetID] = ip
+	}else if  exists && ip != oldIP {
 		n.AssetNewIP[assetID] = ip
 	}
-	n.AssetIP[assetID] = ip
+
 
 }
 
