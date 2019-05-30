@@ -12,6 +12,7 @@ import (
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/peer"
 )
 
 // Handler structure for the cluster requests.
@@ -55,7 +56,17 @@ func (h *Handler) AgentCheck(ctx context.Context, request *grpc_edge_controller_
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)
 	}
-	result, err := h.Manager.AgentCheck(request)
+
+	// get agent IP
+	ip := ""
+	peer, ok := peer.FromContext(ctx)
+	if ok {
+		ip = peer.Addr.String()
+	}else{
+		log.Warn().Str("assetID", request.AssetId).Msg("error getting agent IP")
+	}
+
+	result, err := h.Manager.AgentCheck(request, ip)
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)
 	}

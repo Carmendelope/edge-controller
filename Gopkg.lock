@@ -140,20 +140,20 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:b0af951e7300f9929bc91b6b86660b81fe84046fa46a7ffa1bfde3f4f067abf2"
+  digest = "1:a67e6c5d491d147dc65ac9d42c805c42db38ea11c4471489252d5d92859dc293"
   name = "github.com/nalej/grpc-inventory-go"
   packages = ["."]
   pruneopts = ""
-  revision = "a412e1cf16b5021ded4742df4ce487fd5f2f8c3d"
-  version = "v0.0.10"
+  revision = "2fac90ed6d41a7dd1e3a8ad5fe5d1a3122aa96ee"
+  version = "v0.0.11"
 
 [[projects]]
-  digest = "1:ffe09f32bf620a48c8a6df1059ccdd9f3f5536a6fc79585c4b34ea57e9f86000"
+  digest = "1:b23282b864406b362eb11578a606d10c3818685a0020b595b16f1f64cba13584"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "866283969893bb6be09dc208165b878737f42067"
-  version = "v0.0.21"
+  revision = "b2b186410a5a63576f545d5d736d75d0c5f1073a"
+  version = "v0.0.23"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -443,6 +443,7 @@
     "google.golang.org/grpc",
     "google.golang.org/grpc/credentials",
     "google.golang.org/grpc/metadata",
+    "google.golang.org/grpc/peer",
     "google.golang.org/grpc/reflection",
   ]
   solver-name = "gps-cdcl"

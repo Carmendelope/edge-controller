@@ -82,12 +82,12 @@ func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) de
 	return nil
 }
 
-func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
+func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest, ip string) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
 	// TODO: Verify clock sync
 	// TODO: Handle plugin data
-	log.Info().Str("assetID", request.AssetId).Msg("agent check")
+	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
 
-	m.notifier.AgentAlive(request.AssetId)
+	m.notifier.AgentAlive(request.AssetId, ip)
 	pending, err := m.provider.GetPendingOperations(request.AssetId, true)
 	if err != nil{
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent")
