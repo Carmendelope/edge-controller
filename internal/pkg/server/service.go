@@ -163,7 +163,11 @@ func (s *Service) Run() error {
 
 	log.Info().Interface("joinCredentials", joinResponse).Msg("controller credentials")
 
+	// Store organization_id, edge_controller_id and proxyName
+	s.Configuration.OrganizationId = joinResponse.OrganizationId
+	s.Configuration.EdgeControllerId = joinResponse.EdgeControllerId
 	s.Configuration.ProxyURL = joinResponse.Credentials.Proxyname
+
 	log.Info().Str("vpn_proxy", s.Configuration.ProxyURL).Msg("ProxyURL")
 
 	providers := s.GetProviders()
@@ -265,6 +269,7 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 		AllowsAll: false,
 		Permissions: map[string]interceptorConfig.Permission{
 			"/edge_controller.Agent/AgentJoin": {Must: []string{"APIKEY"}},
+			"/edge_controller.Agent/AgentCheck": {Must: []string{"APIKEY"}},
 		}}, "not-used", "authorization")
 
 	grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
