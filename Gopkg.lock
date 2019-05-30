@@ -223,12 +223,12 @@
   version = "v1.3.1"
 
 [[projects]]
-  branch = "feature/NP-1357_Metrics_plugin"
-  digest = "1:4b71b6bfa2144fbc70ce02bea7432a4f7376ddb7b450a0048ab2bc12bc2c4076"
+  branch = "master"
+  digest = "1:d06eec51cd126a310dfb29442e626eba1d2abba981e5923fc13cdcf5a483fecb"
   name = "github.com/nalej/service-net-agent"
   packages = ["pkg/plugin"]
   pruneopts = ""
-  revision = "2a188057764ffd83d202838f851013f047bf481f"
+  revision = "adf7873198176399575f1ad57b5dec140dec52b9"
 
 [[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"
@@ -533,6 +533,7 @@
     "github.com/rs/zerolog/log",
     "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
+    "github.com/spf13/viper",
     "go.etcd.io/bbolt",
     "golang.org/x/net/context",
     "google.golang.org/grpc",

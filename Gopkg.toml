@@ -56,4 +56,4 @@
 
 [[constraint]]
   name = "github.com/nalej/service-net-agent"
-  branch = "feature/NP-1357_Metrics_plugin"
+  branch = "master"
