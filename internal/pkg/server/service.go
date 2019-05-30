@@ -21,6 +21,7 @@ import (
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"net"
 	"time"
@@ -167,6 +168,8 @@ func (s *Service) Run() error {
 	s.Configuration.OrganizationId = joinResponse.OrganizationId
 	s.Configuration.EdgeControllerId = joinResponse.EdgeControllerId
 	s.Configuration.ProxyURL = joinResponse.Credentials.Proxyname
+	s.Configuration.CaCert.Certificate = joinResponse.Certificate.Certificate
+	s.Configuration.CaCert.PrivateKey = joinResponse.Certificate.PrivateKey
 
 	log.Info().Str("vpn_proxy", s.Configuration.ProxyURL).Msg("ProxyURL")
 
@@ -272,7 +275,15 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 			"/edge_controller.Agent/AgentCheck": {Must: []string{"APIKEY"}},
 		}}, "not-used", "authorization")
 
-	grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
+	creds, err := credentials.NewServerTLSFromFile(s.Configuration.CaCert.Certificate, s.Configuration.CaCert.PrivateKey)
+	if err != nil {
+		log.Fatal().Errs("Failed to generate credentials: %v", []error{err})
+	}
+
+	// server with apiKeyAccess and caCert
+	options :=[]grpc.ServerOption{apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg), grpc.Creds(creds)}
+	grpcServer := grpc.NewServer(options...)
+	//grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
 	grpc_edge_controller_go.RegisterAgentServer(grpcServer, agentHandler)
 
 

@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+type PEMCertificate struct {
+	// Certificate content
+	Certificate string `json:"certificate,omitempty"`
+	// PrivateKey for the certificate
+	PrivateKey  string   `json:"private_key,omitempty"`
+}
+
 type Config struct {
 	// Debug level is active.
 	Debug bool
@@ -44,6 +51,9 @@ type Config struct {
 	ProxyURL string
 	//AlivePeriod determines how often the EIC sends an alive message to the management cluster
 	AlivePeriod time.Duration
+	// CaCert
+	CaCert PEMCertificate
+
 
 }
 
