@@ -19,6 +19,7 @@ import (
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
+	"github.com/nalej/service-net-agent/pkg/plugin"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -184,7 +185,7 @@ func (s *Service) Run() error {
 	})
 
 	// Start plugins
-	derr := startRegisteredPlugins(s.Configuration.PluginConfig)
+	derr := startRegisteredPlugins(s.Configuration.PluginConfig.Sub(plugin.DefaultPluginPrefix))
 	if derr != nil {
 		log.Fatal().Str("error", derr.DebugReport()).Msg("error starting plugins")
 	}

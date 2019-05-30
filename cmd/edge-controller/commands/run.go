@@ -7,8 +7,10 @@ package commands
 import (
 	"github.com/nalej/edge-controller/internal/pkg/server"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
+	"github.com/nalej/service-net-agent/pkg/plugin"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"time"
 )
 
@@ -16,7 +18,9 @@ import (
 const DefaultNotificationPeriod = "30s"
 const DefaultAlivePeriod = "5m"
 
-var cfg = config.Config{}
+var cfg = config.Config{
+	PluginConfig: viper.New(),
+}
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -48,4 +52,7 @@ func init() {
 	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
 	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
+
+	// Add plugin-specific flags
+	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)
 }
