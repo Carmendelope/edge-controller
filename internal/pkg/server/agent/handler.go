@@ -6,6 +6,7 @@ package agent
 
 import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
+	"github.com/nalej/edge-controller/internal/pkg/utils"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-edge-controller-go"
 	"github.com/nalej/grpc-inventory-manager-go"
@@ -61,7 +62,7 @@ func (h *Handler) AgentCheck(ctx context.Context, request *grpc_edge_controller_
 	ip := ""
 	peer, ok := peer.FromContext(ctx)
 	if ok {
-		ip = peer.Addr.String()
+		ip = utils.RemovePort(peer.Addr.String())
 	}else{
 		log.Warn().Str("assetID", request.AssetId).Msg("error getting agent IP")
 	}
