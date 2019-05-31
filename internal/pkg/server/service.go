@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/nalej/authx-interceptors/pkg/interceptor/apikey"
 	interceptorConfig "github.com/nalej/authx-interceptors/pkg/interceptor/config"
@@ -125,7 +126,6 @@ func (s *Service) Run() error {
 	log.Info().Bool("need join", needJoin).Msg("Join")
 
 	if needJoin{
-		log.Info().Msg("Join needed!")
 		joinResponse, err = joinHelper.Join()
 		if err != nil {
 			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error in join")
@@ -162,7 +162,7 @@ func (s *Service) Run() error {
 		}
 	}
 
-	log.Info().Interface("joinCredentials", joinResponse).Msg("controller credentials")
+	log.Info().Str("VpnUser", joinResponse.Credentials.Username).Str("pass", joinResponse.Credentials.Password).Msg("VPN credentials")
 
 	// Store organization_id, edge_controller_id and proxyName
 	s.Configuration.OrganizationId = joinResponse.OrganizationId
@@ -170,8 +170,6 @@ func (s *Service) Run() error {
 	s.Configuration.ProxyURL = joinResponse.Credentials.Proxyname
 	s.Configuration.CaCert.Certificate = joinResponse.Certificate.Certificate
 	s.Configuration.CaCert.PrivateKey = joinResponse.Certificate.PrivateKey
-
-	log.Info().Str("vpn_proxy", s.Configuration.ProxyURL).Msg("ProxyURL")
 
 	providers := s.GetProviders()
 	clients := s.GetClients()
@@ -275,7 +273,8 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 			"/edge_controller.Agent/AgentCheck": {Must: []string{"APIKEY"}},
 		}}, "not-used", "authorization")
 
-	creds, err := credentials.NewServerTLSFromFile(s.Configuration.CaCert.Certificate, s.Configuration.CaCert.PrivateKey)
+	x509Cert, err := tls.X509KeyPair([]byte(s.Configuration.CaCert.Certificate), []byte(s.Configuration.CaCert.PrivateKey))
+	creds :=  credentials.NewTLS(&tls.Config{Certificates: []tls.Certificate{x509Cert}})
 	if err != nil {
 		log.Fatal().Errs("Failed to generate credentials: %v", []error{err})
 	}
@@ -283,7 +282,6 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 	// server with apiKeyAccess and caCert
 	options :=[]grpc.ServerOption{apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg), grpc.Creds(creds)}
 	grpcServer := grpc.NewServer(options...)
-	//grpcServer := grpc.NewServer(apikey.WithAPIKeyInterceptor(apiKeyAccess, cfg))
 	grpc_edge_controller_go.RegisterAgentServer(grpcServer, agentHandler)
 
 
