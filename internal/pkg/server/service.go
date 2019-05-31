@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -162,7 +163,8 @@ func (s *Service) Run() error {
 		}
 	}
 
-	log.Info().Str("VpnUser", joinResponse.Credentials.Username).Str("pass", joinResponse.Credentials.Password).Msg("VPN credentials")
+	log.Info().Str("VpnUser", joinResponse.Credentials.Username).Str("pass", strings.Repeat("*", len(joinResponse.Credentials.Password))).
+		Msg("VPN credentials")
 
 	// Store organization_id, edge_controller_id and proxyName
 	s.Configuration.OrganizationId = joinResponse.OrganizationId
