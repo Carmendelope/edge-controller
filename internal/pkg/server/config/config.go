@@ -53,6 +53,8 @@ type Config struct {
 	AlivePeriod time.Duration
 	// CaCert
 	CaCert PEMCertificate
+	// Location
+	Location string
 
 
 }
@@ -85,6 +87,9 @@ func (conf * Config) Validate() derrors.Error {
 	if conf.AlivePeriod.Seconds() < 1 {
 		return derrors.NewInvalidArgumentError("alivePeriod should be minimum 1s")
 	}
+	if conf.Location == "" {
+		return derrors.NewInvalidArgumentError("location must be specified")
+	}
 
 	return nil
 }
@@ -107,4 +112,5 @@ func (conf *Config) Print() {
 	if conf.Labels != "" {
 		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
 	}
+	log.Info().Str("Location", conf.Location).Msg("Edge Controller Location")
 }

@@ -48,4 +48,5 @@ func init() {
 	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
 	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
+	runCmd.Flags().StringVar(&cfg.Location, "location", "", "Edge Controller Location")
 }
