@@ -45,7 +45,7 @@ func NewMetricsDataFromGRPC(data *grpc_edge_controller_go.PluginData) (*MetricsD
 	}
 
 	metricsData := &MetricsData{
-		Timestamp: time.Unix(grpcMetrics.GetTimestmap(), 0).UTC(),
+		Timestamp: time.Unix(grpcMetricsData.GetTimestamp(), 0).UTC(),
 		Metrics: metrics,
 	}
 

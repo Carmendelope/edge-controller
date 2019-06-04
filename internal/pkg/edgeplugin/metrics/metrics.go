@@ -13,6 +13,7 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/edgeplugin"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
+	"github.com/nalej/grpc-edge-controller-go"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -44,7 +45,7 @@ func NewMetrics(config *viper.Viper) (plugin.Plugin, derrors.Error) {
 	// Validate configuration
 	connConfig, derr := metricstorage.NewConnectionConfig(config)
 	if derr != nil {
-		return derr
+		return nil, derr
 	}
 
 	// Create storage provider based on config. For now, just InfluxDB
@@ -71,7 +72,7 @@ func (m *Metrics) StartPlugin() (derrors.Error) {
 		return derr
 	}
 
-	derr = m.provider.CreateSchemaIfNeeded()
+	derr = m.provider.CreateSchema(true)
 	if derr != nil {
 		return derr
 	}
@@ -98,7 +99,7 @@ func (m *Metrics) HandleAgentData(data *grpc_edge_controller_go.PluginData) (der
 	}
 
 	// Store metrics
-	derr := m.provider.StoreMetricsData(metrics)
+	derr = m.provider.StoreMetricsData(metrics)
 	if derr != nil {
 		return derr
 	}
