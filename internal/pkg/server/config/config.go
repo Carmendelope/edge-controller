@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+type PEMCertificate struct {
+	// Certificate content
+	Certificate string `json:"certificate,omitempty"`
+	// PrivateKey for the certificate
+	PrivateKey  string   `json:"private_key,omitempty"`
+}
+
 type Config struct {
 	// Debug level is active.
 	Debug bool
@@ -45,6 +52,10 @@ type Config struct {
 	ProxyURL string
 	//AlivePeriod determines how often the EIC sends an alive message to the management cluster
 	AlivePeriod time.Duration
+	// CaCert
+	CaCert PEMCertificate
+	// Location
+	Location string
 
 	// Plugin configuration - using Viper to be flexible so it's easy to
 	// add new plugins
@@ -100,5 +111,9 @@ func (conf *Config) Print() {
 	log.Info().Str("Name", conf.Name).Msg("Edge Controller name")
 	if conf.Labels != "" {
 		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
+	}
+	log.Info().Str("Location", conf.Location).Msg("Edge Controller Location")
+	for _, k := range(conf.PluginConfig.AllKeys()) {
+		log.Info().Interface(k, conf.PluginConfig.Get(k)).Msg("Plugin configuration option")
 	}
 }

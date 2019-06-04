@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/edgeplugin"
+	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-edge-controller-go"
@@ -51,11 +52,25 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 		log.Warn().Str("agentID", request.AgentId).Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot join agent")
 		return nil, conversions.ToDerror(err)
 	}
+
+	// add agent
+	err = m.provider.AddManagedAsset(entities.AgentJoinInfo{
+		Created: time.Now().Unix(),
+		AssetId: response.AssetId,
+		Token: response.Token,
+	})
+	if err != nil{
+		log.Warn().Str("agentID", request.AgentId).Str("assetId", response.AssetId).Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot add Asset")
+		return nil, conversions.ToDerror(err)
+	}
+
+
+	// add Token
 	m.provider.AddJoinToken(response.Token)
 	log.Debug().Str("agentID", request.AgentId).Str("assetID", response.AssetId).Msg("Agent joined successfully")
 	return response, nil
 
-	return nil, nil
+
 }
 
 func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) derrors.Error {
@@ -68,10 +83,11 @@ func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) de
 	return nil
 }
 
-func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
+func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest, ip string) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
 	// TODO: Verify clock sync
 
-	m.notifier.AgentAlive(request.AssetId)
+	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
+	m.notifier.AgentAlive(request.AssetId, ip)
 
 	// Handle plugin data
 	for _, data := range(request.GetPluginData()) {
