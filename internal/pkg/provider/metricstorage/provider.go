@@ -10,6 +10,8 @@ import (
 	"github.com/nalej/derrors"
 
 	"github.com/nalej/edge-controller/internal/pkg/entities"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Provider interface to store and retrieve metrics data. Before any storager
@@ -32,6 +34,26 @@ type Provider interface {
 
 }
 
+type ProviderType string
+func (t ProviderType) String() string {
+	return string(t)
+}
+
+type ProviderNewFunc func(*ConnectionConfig) (Provider, derrors.Error)
+
+var providers = map[ProviderType]ProviderNewFunc{}
+
+func Register(t ProviderType, f ProviderNewFunc) {
+	log.Debug().Str("type", t.String()).Msg("registering metricstorage provider")
+	providers[t] = f
+}
+
+// Depending on the configuration, create the right provider instance
 func NewProvider(conf *ConnectionConfig) (Provider, derrors.Error) {
-	return nil, nil
+	f, found := providers[conf.providerType]
+	if !found {
+		return nil, derrors.NewInvalidArgumentError("provider not available").WithParams(conf.providerType)
+	}
+
+	return f(conf)
 }

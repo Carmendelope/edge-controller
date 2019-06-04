@@ -13,9 +13,23 @@ import (
 )
 
 type ConnectionConfig struct {
-
+	providerType ProviderType
 }
 
+const defaultProviderType ProviderType = "influxdb"
+
 func NewConnectionConfig(conf *viper.Viper) (*ConnectionConfig, derrors.Error) {
-	return nil, nil
+	// Current we only have the InfluxDB provider
+	t := defaultProviderType
+
+	providerConf := conf.Sub(t.String())
+	if providerConf == nil {
+		providerConf = viper.New()
+	}
+
+	connConf := &ConnectionConfig{
+		providerType: t,
+	}
+
+	return connConf, nil
 }
