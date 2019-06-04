@@ -114,6 +114,12 @@ func (s *Service) Run() error {
 	}
 	s.Configuration.Print()
 
+	// Start plugins
+	derr := startRegisteredPlugins(getSubConfig(s.Configuration.PluginConfig, plugin.DefaultPluginPrefix))
+	if derr != nil {
+		log.Fatal().Str("error", derr.DebugReport()).Msg("error starting plugins")
+	}
+
 	//If the controller has not done the join yet, it will have to be done
 	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name,
 		s.Configuration.Labels, s.Configuration.Location)
@@ -191,12 +197,6 @@ func (s *Service) Run() error {
 		EdgeControllerId: joinResponse.EdgeControllerId,
 		Ip: *ip,
 	})
-
-	// Start plugins
-	derr := startRegisteredPlugins(s.Configuration.PluginConfig.Sub(plugin.DefaultPluginPrefix))
-	if derr != nil {
-		log.Fatal().Str("error", derr.DebugReport()).Msg("error starting plugins")
-	}
 
 	// launch the alive loop
 	go s.aliveLoop()
