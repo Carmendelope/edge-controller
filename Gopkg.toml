@@ -65,3 +65,7 @@
 [[constraint]]
   name = "github.com/nalej/service-net-agent"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/influxdata/influxdb1-client"
+  revision = "8ff2fc3824fcb533795f9a2f233275f0bb18d6c5"

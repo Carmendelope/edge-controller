@@ -36,7 +36,12 @@ func init() {
 	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
 		Name: "influxdb.address",
 		Description: "InfluxDB address",
-		Default: "http://influxdb:8080",
+		Default: "http://localhost:8086",
+	})
+	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
+		Name: "influxdb.database",
+		Description: "InfluxDB database name",
+		Default: "metrics",
 	})
         plugin.Register(&metricsDescriptor)
 }

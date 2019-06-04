@@ -84,6 +84,18 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7e84371aa99782092df4d9175df1b828e9dbbbd344fcc50bcf3ced3e9d3c31ce"
+  name = "github.com/influxdata/influxdb1-client"
+  packages = [
+    "models",
+    "pkg/escape",
+    "v2",
+  ]
+  pruneopts = ""
+  revision = "8ff2fc3824fcb533795f9a2f233275f0bb18d6c5"
+
+[[projects]]
   digest = "1:ae39921edb7f801f7ce1b6b5484f9715a1dd2b52cb645daef095cd10fd6ee774"
   name = "github.com/magiconair/properties"
   packages = ["."]
@@ -516,6 +528,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/influxdata/influxdb1-client/v2",
     "github.com/nalej/authx-interceptors/pkg/interceptor/apikey",
     "github.com/nalej/authx-interceptors/pkg/interceptor/config",
     "github.com/nalej/derrors",

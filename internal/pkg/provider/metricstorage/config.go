@@ -14,6 +14,12 @@ import (
 
 type ConnectionConfig struct {
 	providerType ProviderType
+
+	// Protocol (http/https), hostname and port
+	Address string
+
+	// Database name
+	Database string
 }
 
 const defaultProviderType ProviderType = "influxdb"
@@ -29,6 +35,8 @@ func NewConnectionConfig(conf *viper.Viper) (*ConnectionConfig, derrors.Error) {
 
 	connConf := &ConnectionConfig{
 		providerType: t,
+		Address: providerConf.GetString("address"),
+		Database: providerConf.GetString("database"),
 	}
 
 	return connConf, nil
