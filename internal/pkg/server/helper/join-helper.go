@@ -59,9 +59,11 @@ type JoinHelper struct {
 	// labels with the edge controller labels
 	Labels map[string]string
 	DnsUrl string
+	// Location with the EC location
+	Location string
 }
 
-func NewJoinHelper (configFile string, port int, name string, labels string ) (*JoinHelper, error) {
+func NewJoinHelper (configFile string, port int, name string, labels string, location string ) (*JoinHelper, error) {
 
 	jsonFile, err :=  os.Open(configFile)
 	if err != nil {
@@ -92,6 +94,7 @@ func NewJoinHelper (configFile string, port int, name string, labels string ) (*
 		Cacert: eicToken.Cacert,
 		JoinUrl: eicToken.JoinUrl,
 		Labels: joinLabels,
+		Location: location,
 		DnsUrl: eicToken.DnsUrl,
 	}, nil
 }
@@ -145,11 +148,18 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error
 	}
 	client := grpc_eic_api_go.NewEICClient(conn)
 
+	ips, ipErr := j.getAllIPs()
+	if ipErr != nil {
+		log.Error().Str("trace", conversions.ToDerror(ipErr).DebugReport()).Msg("cannot get IPs to create CA")
+		return nil, ipErr
+	}
 
 	joinResponse, joinErr := client.Join(ctx, &grpc_inventory_manager_go.EICJoinRequest{
 		OrganizationId: j.OrganizationId,
 		Name: j.Name,
 		Labels: j.Labels,
+		Geolocation: j.Location,
+		Ips: ips,
 	})
 	if joinErr != nil {
 		log.Error().Str("trace", conversions.ToDerror(joinErr).DebugReport()).Msg("error getting credentials")
@@ -319,6 +329,35 @@ func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResp
 	return credentials, nil
 }
 
+// getAllIPs return a list of IPs where edge-controller accepts connections (except VPN Address)
+func (j *JoinHelper) getAllIPs () ([]string, error){
+
+	vpnName := j.getVPNNicName()
+	ips := make ([]string, 0)
+
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return ips, err
+	}
+	for _, iface := range interfaces {
+		if iface.Name != vpnName {
+			addresses, err := iface.Addrs()
+			if err != nil {
+				return ips, err
+			}
+			for _, addr := range addresses {
+				netIP, ok := addr.(*net.IPNet)
+				if ok && !netIP.IP.IsLoopback() && netIP.IP.To4() != nil {
+					ip := netIP.IP.String()
+					ips = append(ips, ip)
+				}
+			}
+		}
+	}
+
+	return ips, nil
+}
+
 func (j * JoinHelper) getVPNNicName() string{
 	return fmt.Sprintf("vpn_%s", nicName)
 }
@@ -340,5 +379,6 @@ func (j * JoinHelper) GetVPNAddress() (*string, error){
 			return &ip, nil
 		}
 	}
+
 	return nil, errors.New("cannot retrieve address list")
 }

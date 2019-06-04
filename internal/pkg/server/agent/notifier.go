@@ -21,6 +21,10 @@ type Notifier struct {
 	notifyPeriod time.Duration
 	// AssetAlive is a map of asset identifiers with the timestamp they sent the last check/ping.
 	assetAlive map[string]int64
+	// AssetIP is a map of the asset identifiers with its ip
+	AssetIP map [string]string
+	// AssetNewIP is a map of the assets identifiers whose ip has changed, this list will be sent to the system model to update the information
+	AssetNewIP map [string]string
 	// provider for the persistent operations.
 	provider asset.Provider
 	// mngtClient with the client that connects to the management cluster.
@@ -36,6 +40,8 @@ func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient
 	return &Notifier{
 		notifyPeriod: notifyPeriod,
 		assetAlive: make(map[string]int64, 0),
+		AssetIP: make (map[string]string, 0),
+		AssetNewIP: make (map[string]string, 0),
 		provider: provider,
 		mngtClient: mngtClient,
 		organizationID: organizationID,
@@ -43,12 +49,23 @@ func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient
 	}
 }
 
-// AgentAlive registers that an agent is alive
-func (n *Notifier) AgentAlive(assetID string) {
+// AgentAlive registers that an agent is alive and its IP
+func (n *Notifier) AgentAlive(assetID string, ip string) {
 	n.Lock()
 	defer n.Unlock()
 	log.Debug().Str("assetID", assetID).Msg("asset is alive")
 	n.assetAlive[assetID] = time.Now().Unix()
+
+	// check IP
+	oldIP, exists := n.AssetIP[assetID]
+	if !exists {
+		n.AssetNewIP[assetID] = ip
+		n.AssetIP[assetID] = ip
+	}else if  exists && ip != oldIP {
+		n.AssetNewIP[assetID] = ip
+	}
+
+
 }
 
 // LaunchNotifierLoop is intended to be launched as goroutine for periodically sending data back to the management cluster.
@@ -67,7 +84,9 @@ func (n * Notifier) sendAliveMessages() bool{
 		OrganizationId: n.organizationID,
 		EdgeControllerId: n.edgeControllerID,
 		Agents: n.assetAlive,
+		AgentsIp: n.AssetNewIP,
 	}
+
 	_, err := n.mngtClient.LogAgentAlive(ctx, messages)
 	if err != nil{
 		log.Warn().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot send alive messages to management cluster")
@@ -89,6 +108,9 @@ func (n *Notifier) notifyManagementCluster() {
 			// If successfull, cleanup the map
 			for k := range n.assetAlive{
 				delete(n.assetAlive, k)
+			}
+			for ip := range  n.AssetNewIP {
+				delete (n.AssetNewIP, ip)
 			}
 		}
 	}
