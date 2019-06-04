@@ -59,9 +59,11 @@ type JoinHelper struct {
 	// labels with the edge controller labels
 	Labels map[string]string
 	DnsUrl string
+	// Location with the EC location
+	Location string
 }
 
-func NewJoinHelper (configFile string, port int, name string, labels string ) (*JoinHelper, error) {
+func NewJoinHelper (configFile string, port int, name string, labels string, location string ) (*JoinHelper, error) {
 
 	jsonFile, err :=  os.Open(configFile)
 	if err != nil {
@@ -92,6 +94,7 @@ func NewJoinHelper (configFile string, port int, name string, labels string ) (*
 		Cacert: eicToken.Cacert,
 		JoinUrl: eicToken.JoinUrl,
 		Labels: joinLabels,
+		Location: location,
 		DnsUrl: eicToken.DnsUrl,
 	}, nil
 }
@@ -155,6 +158,7 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error
 		OrganizationId: j.OrganizationId,
 		Name: j.Name,
 		Labels: j.Labels,
+		Location: j.Location,
 		Ips: ips,
 	})
 	if joinErr != nil {

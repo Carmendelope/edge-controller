@@ -53,6 +53,8 @@ type Config struct {
 	AlivePeriod time.Duration
 	// CaCert
 	CaCert PEMCertificate
+	// Location
+	Location string
 
 
 }
@@ -107,4 +109,5 @@ func (conf *Config) Print() {
 	if conf.Labels != "" {
 		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
 	}
+	log.Info().Str("Location", conf.Location).Msg("Edge Controller Location")
 }
