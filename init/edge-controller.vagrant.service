@@ -7,6 +7,6 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=/vagrant/bin/linux_amd64/edge-controller run --joinTokenPath=/vagrant/joinToken.json --useBBoltProviders --bboltpath=/home/vagrant/database.db --name EC001 --labels=name:test --location="ESP, Spain"
+ExecStart=/vagrant/bin/linux_amd64/edge-controller run --joinTokenPath=/vagrant/joinToken.json --useBBoltProviders --bboltpath=/home/vagrant/database.db --name EC001 --labels=name:test --location="Madrid, Madrid, Spain"
 [Install]
 WantedBy=multi-user.target
