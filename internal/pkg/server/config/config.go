@@ -87,9 +87,6 @@ func (conf * Config) Validate() derrors.Error {
 	if conf.AlivePeriod.Seconds() < 1 {
 		return derrors.NewInvalidArgumentError("alivePeriod should be minimum 1s")
 	}
-	if conf.Location == "" {
-		return derrors.NewInvalidArgumentError("location must be specified")
-	}
 
 	return nil
 }
