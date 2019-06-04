@@ -11,6 +11,9 @@ import (
 
 	"github.com/nalej/service-net-agent/pkg/plugin"
 
+	// Available plugins
+	_ "github.com/nalej/edge-controller/internal/pkg/edgeplugin/metrics"
+
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
