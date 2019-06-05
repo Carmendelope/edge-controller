@@ -122,7 +122,7 @@ func (s *Service) Run() error {
 
 	//If the controller has not done the join yet, it will have to be done
 	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name,
-		s.Configuration.Labels, s.Configuration.Location)
+		s.Configuration.Labels, s.Configuration.Geolocation)
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error creating joinHelper")
 	}
