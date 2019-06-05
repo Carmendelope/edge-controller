@@ -53,8 +53,8 @@ type Config struct {
 	AlivePeriod time.Duration
 	// CaCert
 	CaCert PEMCertificate
-	// Location
-	Location string
+	// Geolocation
+	Geolocation string
 
 
 }
@@ -109,5 +109,6 @@ func (conf *Config) Print() {
 	if conf.Labels != "" {
 		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
 	}
-	log.Info().Str("Location", conf.Location).Msg("Edge Controller Location")
+	log.Info().Interface("AlivePeriod", conf.AlivePeriod).Msg("Alive Period")
+	log.Info().Str("Geolocation", conf.Geolocation).Msg("Edge Controller Location")
 }
