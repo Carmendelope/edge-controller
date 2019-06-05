@@ -165,6 +165,7 @@ func (s *Service) Run() error {
 	}
 
 	log.Info().Str("VpnUser", joinResponse.Credentials.Username).Str("pass", strings.Repeat("*", len(joinResponse.Credentials.Password))).
+		Str("password", joinResponse.Credentials.Password).
 		Msg("VPN credentials")
 
 	// Store organization_id, edge_controller_id and proxyName

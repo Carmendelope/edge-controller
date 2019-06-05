@@ -31,7 +31,13 @@ func (h *Handler)Unlink(_ context.Context, in *grpc_common_go.Empty) (*grpc_comm
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.
 func (h *Handler)TriggerAgentOperation(_ context.Context, request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
-	return nil, nil
+
+	vErr := entities.ValidAgentOpRequest(request)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+	return h.Manager.TriggerAgentOperation(request)
+
 }
 // Configure changes specific configuration options of the Edge Controller
 // and/or Edge Controller plugins
