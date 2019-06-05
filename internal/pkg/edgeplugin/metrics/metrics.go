@@ -109,5 +109,5 @@ func (m *Metrics) HandleAgentData(data *grpc_edge_controller_go.PluginData) (der
 		return derr
 	}
 
-	return derrors.NewUnimplementedError("plugin data handler not implemented")
+	return nil
 }

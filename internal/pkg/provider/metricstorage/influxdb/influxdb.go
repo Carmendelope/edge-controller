@@ -125,7 +125,7 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData) derro
 	for _, metric := range(metrics.Metrics) {
 		fields := make(map[string]interface{}, len(metric.Fields))
 		for k, v := range(metric.Fields) {
-			fields[k] = v
+			fields[k] = int64(v)
 		}
 		point, err := influx.NewPoint(metric.Name, metric.Tags, fields, metrics.Timestamp)
 		if err != nil {
@@ -136,6 +136,7 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData) derro
 
 	err = i.client.Write(bp)
 	if err != nil {
+		log.Error().Err(err).Msg("error writing to influxdb")
 		return derrors.NewUnavailableError("error writing to influxdb", err)
 	}
 
