@@ -9,7 +9,7 @@ package edgeplugin
 import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-edge-controller-go"
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 )
 
 type EdgePlugin interface {

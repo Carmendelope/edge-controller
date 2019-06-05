@@ -7,7 +7,7 @@ package commands
 import (
 	"github.com/nalej/edge-controller/internal/pkg/server"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

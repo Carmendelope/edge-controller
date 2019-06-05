@@ -223,12 +223,12 @@
   version = "v1.3.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:d06eec51cd126a310dfb29442e626eba1d2abba981e5923fc13cdcf5a483fecb"
-  name = "github.com/nalej/service-net-agent"
-  packages = ["pkg/plugin"]
+  branch = "feature/NP-1358_Separate_plugin_infrastructure"
+  digest = "1:caf839a4741eb24688de1e400e2a3d933542e47dbb10362ff357ba8b8094d1ac"
+  name = "github.com/nalej/infra-net-plugin"
+  packages = ["."]
   pruneopts = ""
-  revision = "adf7873198176399575f1ad57b5dec140dec52b9"
+  revision = "0969105fad38b751f5b61f86ab43afcc1cc4cbcd"
 
 [[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"
@@ -526,7 +526,7 @@
     "github.com/nalej/grpc-inventory-go",
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
-    "github.com/nalej/service-net-agent/pkg/plugin",
+    "github.com/nalej/infra-net-plugin",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/rs/zerolog",

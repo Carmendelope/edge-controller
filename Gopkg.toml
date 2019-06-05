@@ -63,5 +63,5 @@
     branch="master"
 
 [[constraint]]
-  name = "github.com/nalej/service-net-agent"
-  branch = "master"
+  name = "github.com/nalej/infra-net-plugin"
+  branch = "feature/NP-1358_Separate_plugin_infrastructure"

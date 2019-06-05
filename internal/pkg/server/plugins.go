@@ -9,7 +9,7 @@ package server
 import (
 	"github.com/nalej/derrors"
 
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
