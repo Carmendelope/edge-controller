@@ -20,7 +20,7 @@ import (
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -122,7 +122,7 @@ func (s *Service) Run() error {
 
 	//If the controller has not done the join yet, it will have to be done
 	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name,
-		s.Configuration.Labels, s.Configuration.Location)
+		s.Configuration.Labels, s.Configuration.Geolocation)
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error creating joinHelper")
 	}

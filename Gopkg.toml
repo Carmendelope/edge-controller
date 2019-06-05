@@ -32,7 +32,7 @@
 
 [[constraint]]
      name="github.com/nalej/grpc-inventory-go"
-     version="v0.0.14"
+     version="v0.0.15"
 
 [[constraint]]
      name="github.com/nalej/grpc-authx-go"
@@ -63,8 +63,8 @@
     branch="master"
 
 [[constraint]]
-  name = "github.com/nalej/service-net-agent"
-  branch = "master"
+  name = "github.com/nalej/infra-net-plugin"
+  branch = "feature/NP-1358_Separate_plugin_infrastructure"
 
 [[constraint]]
   name = "github.com/influxdata/influxdb1-client"

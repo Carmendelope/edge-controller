@@ -54,8 +54,8 @@ type Config struct {
 	AlivePeriod time.Duration
 	// CaCert
 	CaCert PEMCertificate
-	// Location
-	Location string
+	// Geolocation
+	Geolocation string
 
 	// Plugin configuration - using Viper to be flexible so it's easy to
 	// add new plugins
@@ -112,7 +112,8 @@ func (conf *Config) Print() {
 	if conf.Labels != "" {
 		log.Info().Str("Labels", conf.Labels).Msg("Edge Controller labels")
 	}
-	log.Info().Str("Location", conf.Location).Msg("Edge Controller Location")
+	log.Info().Interface("AlivePeriod", conf.AlivePeriod).Msg("Alive Period")
+	log.Info().Str("Geolocation", conf.Geolocation).Msg("Edge Controller Location")
 	for _, k := range(conf.PluginConfig.AllKeys()) {
 		log.Info().Interface(k, conf.PluginConfig.Get(k)).Msg("Plugin configuration option")
 	}

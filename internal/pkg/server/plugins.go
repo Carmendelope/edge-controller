@@ -9,7 +9,7 @@ package server
 import (
 	"github.com/nalej/derrors"
 
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 
 	// Available data plugins
 	_ "github.com/nalej/edge-controller/internal/pkg/edgeplugin/metrics"

@@ -7,7 +7,7 @@ package commands
 import (
 	"github.com/nalej/edge-controller/internal/pkg/server"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,7 +52,7 @@ func init() {
 	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
 	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
-	runCmd.Flags().StringVar(&cfg.Location, "location", "", "Edge Controller Location")
+	runCmd.Flags().StringVar(&cfg.Geolocation, "geolocation", "", "Edge Controller Geoocation")
 
 	// Add plugin-specific flags
 	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)
