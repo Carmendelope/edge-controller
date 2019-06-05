@@ -9,7 +9,7 @@ package metrics
 import (
 	"github.com/nalej/derrors"
 
-	"github.com/nalej/service-net-agent/pkg/plugin"
+	plugin "github.com/nalej/infra-net-plugin"
 	"github.com/nalej/edge-controller/internal/pkg/edgeplugin"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
