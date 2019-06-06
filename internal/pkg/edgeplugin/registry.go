@@ -31,7 +31,7 @@ func NewEdgeRegistry(parent *plugin.Registry) *EdgeRegistry {
         return r
 }
 
-func (r *EdgeRegistry) HandleAgentData(data *grpc_edge_controller_go.PluginData) (derrors.Error) {
+func (r *EdgeRegistry) HandleAgentData(assetId string, data *grpc_edge_controller_go.PluginData) (derrors.Error) {
 	// Check protocol consistency and get plugin name
 	name, found := grpc_edge_controller_go.Plugin_name[int32(data.GetPlugin())]
 	if !found {
@@ -51,9 +51,9 @@ func (r *EdgeRegistry) HandleAgentData(data *grpc_edge_controller_go.PluginData)
 	}
 
 	// Hand off to plugin - plugin will do type casting
-	return ep.HandleAgentData(data)
+	return ep.HandleAgentData(assetId, data)
 }
 
-func HandleAgentData(data *grpc_edge_controller_go.PluginData) (derrors.Error) {
-	return defaultRegistry.HandleAgentData(data)
+func HandleAgentData(assetId string, data *grpc_edge_controller_go.PluginData) (derrors.Error) {
+	return defaultRegistry.HandleAgentData(assetId, data)
 }

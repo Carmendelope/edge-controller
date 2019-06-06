@@ -30,7 +30,7 @@ type Provider interface {
 	CreateSchema(ifNeeded bool) derrors.Error
 
 	// Store metrics
-	StoreMetricsData(*entities.MetricsData) derrors.Error
+	StoreMetricsData(data *entities.MetricsData, extraTags map[string]string) derrors.Error
 
 }
 

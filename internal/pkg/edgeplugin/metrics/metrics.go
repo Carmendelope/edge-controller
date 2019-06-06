@@ -90,7 +90,7 @@ func (m *Metrics) StopPlugin() {
 	m.provider.Disconnect()
 }
 
-func (m *Metrics) HandleAgentData(data *grpc_edge_controller_go.PluginData) (derrors.Error) {
+func (m *Metrics) HandleAgentData(assetId string, data *grpc_edge_controller_go.PluginData) (derrors.Error) {
 	log.Debug().Msg("metrics data received")
 	// Check if started
 	if !m.provider.Connected() {
@@ -103,8 +103,13 @@ func (m *Metrics) HandleAgentData(data *grpc_edge_controller_go.PluginData) (der
 		return derr
 	}
 
+	// Extra tags
+	tags := map[string]string{
+		"asset_id": assetId,
+	}
+
 	// Store metrics
-	derr = m.provider.StoreMetricsData(metrics)
+	derr = m.provider.StoreMetricsData(metrics, tags)
 	if derr != nil {
 		return derr
 	}

@@ -19,6 +19,6 @@ type BaseEdgePlugin struct {
 // A plugin can embed BaseEdgePlugin and only has to define GetPluginDescriptor
 // func (b *BasePlugin) GetPluginDescriptor() *PluginDescriptor
 
-func (b *BaseEdgePlugin) HandleAgentData(data *grpc_edge_controller_go.PluginData) (derrors.Error) {
+func (b *BaseEdgePlugin) HandleAgentData(assetId string, data *grpc_edge_controller_go.PluginData) (derrors.Error) {
 	return derrors.NewUnimplementedError("plugin data handler not implemented")
 }

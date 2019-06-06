@@ -91,7 +91,7 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 
 	// Handle plugin data
 	for _, data := range(request.GetPluginData()) {
-		derr := edgeplugin.HandleAgentData(data)
+		derr := edgeplugin.HandleAgentData(request.GetAssetId(), data)
 		// TODO: Think about failure modes - do we want to collect
 		// errors and handle what we can, handle nothing if there is
 		// an error (which requires rollback or commit) or just

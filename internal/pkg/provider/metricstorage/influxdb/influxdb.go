@@ -110,7 +110,7 @@ func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 }
 
 // Store metrics
-func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData) derrors.Error {
+func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData, extraTags map[string]string) derrors.Error {
 	// Create structure to add received metrics in bulk
 	bp, err := influx.NewBatchPoints(influx.BatchPointsConfig{
 		// We don't retrieve metrics with more than a second precision
@@ -126,6 +126,11 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData) derro
 		fields := make(map[string]interface{}, len(metric.Fields))
 		for k, v := range(metric.Fields) {
 			fields[k] = int64(v)
+		}
+		for k, v := range(extraTags) {
+			// I think it's ok to modify the metrics data, we don't
+			// use it elsewhere
+			metric.Tags[k] = v
 		}
 		point, err := influx.NewPoint(metric.Name, metric.Tags, fields, metrics.Timestamp)
 		if err != nil {

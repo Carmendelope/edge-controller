@@ -41,6 +41,10 @@ func NewMetricsDataFromGRPC(data *grpc_edge_controller_go.PluginData) (*MetricsD
 			Tags: grpcMetric.GetTags(),
 			Fields: grpcMetric.GetFields(),
 		}
+		if metric.Tags == nil {
+			metric.Tags = map[string]string{}
+		}
+
 		metrics = append(metrics, metric)
 	}
 
