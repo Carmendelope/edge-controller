@@ -40,7 +40,13 @@ func (h *Handler)Configure(_ context.Context, request *grpc_inventory_manager_go
 }
 // ListMetrics returns available metrics for a certain selection of assets
 func (h *Handler)ListMetrics(_ context.Context, selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
-	return nil, nil
+	log.Debug().Interface("selector", selector).Msg("listing available metrics")
+	derr := entities.ValidAssetSelector(selector)
+	if derr != nil {
+		return nil, conversions.ToGRPCError(derr)
+	}
+
+	return h.Manager.ListMetrics(selector)
 }
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller

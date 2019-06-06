@@ -11,17 +11,18 @@ import (
 	"strings"
 )
 
-func whereClauseFromTags(tags map[string]string) string {
+func whereClauseFromTags(tags map[string][]string) string {
 	clauses := make([]string, 0, len(tags))
-	for k, v := range(tags) {
-		clauses = append(clauses, fmt.Sprintf("\"%s\"='%s'", k, v))
+	for tag, values := range(tags) {
+		for _, value := range(values) {
+			clauses = append(clauses, fmt.Sprintf("\"%s\"='%s'", tag, value))
+		}
 	}
 
 	return strings.Join(clauses, " OR ")
 }
 
 func whereClause(subclauses []string) string {
-	fmt.Println(len(subclauses))
 	clause := strings.Join(subclauses, " OR ")
 	if len(clause) == 0 {
 		return ""

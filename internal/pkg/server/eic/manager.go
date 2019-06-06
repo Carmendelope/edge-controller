@@ -6,6 +6,7 @@ package eic
 
 import (
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
+	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
@@ -17,10 +18,12 @@ import (
 type Manager struct{
 	config config.Config
 	provider asset.Provider
+
+	metricStorageProvider metricstorage.Provider
 }
 
-func NewManager(cfg config.Config, assetProvider asset.Provider,) Manager{
-	return Manager{cfg, assetProvider}
+func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider) Manager{
+	return Manager{cfg, assetProvider, metricStorageProvider}
 }
 
 // Unlink the receiving EIC.
@@ -39,7 +42,28 @@ func (m * Manager)Configure(request *grpc_inventory_manager_go.ConfigureEICReque
 }
 // ListMetrics returns available metrics for a certain selection of assets
 func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
-	return nil, nil
+	// TODO: Potentially check if the Organization ID and Edge
+	// Controller ID on the selector matches.
+
+	// Create tag selector from assets
+	var tagSelector map[string][]string = nil
+	assets := selector.GetAssetIds()
+	if len(assets) > 0 {
+		tagSelector = map[string][]string{
+			"asset_id": assets,
+		}
+	}
+
+	metrics, derr := m.metricStorageProvider.ListMetrics(tagSelector)
+	if derr != nil {
+		return nil, derr
+	}
+
+	metricsList := &grpc_inventory_manager_go.MetricsList{
+		Metrics: metrics,
+	}
+
+	return metricsList, nil
 }
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller

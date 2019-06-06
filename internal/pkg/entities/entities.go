@@ -205,3 +205,23 @@ func ValidEdgeControllerID(edge *grpc_inventory_go.EdgeControllerId) derrors.Err
 	return nil
 }
 
+
+func ValidAssetSelector(selector *grpc_inventory_manager_go.AssetSelector) derrors.Error {
+	// Any selector is in theory valid. We could check organization id and
+	// edge controller id, but that's easier done somewhere where we have
+	// that info.
+
+	// However, the edge controller likely doesn't know about user-defined
+	// labels and group IDs, so the inventory manager has to translate from
+	// those to asset IDs. To make sure that's done, we'll check if we don't
+	// have those fields set anymore.
+
+	if len(selector.GetGroupIds()) > 0 {
+		return derrors.NewInvalidArgumentError("cannot select on group IDs at Edge Controller")
+	}
+	if len(selector.GetLabels()) > 0 {
+		return derrors.NewInvalidArgumentError("cannot select on labels at Edge Controller")
+	}
+
+	return nil
+}
