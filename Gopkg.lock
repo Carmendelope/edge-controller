@@ -223,12 +223,12 @@
   version = "v1.3.1"
 
 [[projects]]
-  branch = "feature/NP-1358_Separate_plugin_infrastructure"
   digest = "1:caf839a4741eb24688de1e400e2a3d933542e47dbb10362ff357ba8b8094d1ac"
   name = "github.com/nalej/infra-net-plugin"
   packages = ["."]
   pruneopts = ""
-  revision = "0969105fad38b751f5b61f86ab43afcc1cc4cbcd"
+  revision = "3cd6896122c6ff795bb4b0be1e9fbfe3f931187a"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"

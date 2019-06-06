@@ -64,4 +64,4 @@
 
 [[constraint]]
   name = "github.com/nalej/infra-net-plugin"
-  branch = "feature/NP-1358_Separate_plugin_infrastructure"
+  version = "v1.0.0"
