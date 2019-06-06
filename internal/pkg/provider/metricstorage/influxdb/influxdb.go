@@ -79,13 +79,12 @@ func (i *InfluxDBProvider) Connected() bool {
 // any of the entities already exist, unless `ifNeeded` is set.
 func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 	// Check if exists
-	q := influx.NewQuery(queryShowDatabases, "", "")
-	response, err := i.client.Query(q)
+	response, err := i.query(queryShowDatabases)
 	if err != nil {
 		return derrors.NewUnavailableError("unable to get list of databases", err)
 	}
 	found := false
-	for _, db := range(response.Results[0].Series[0].Values) {
+	for _, db := range(getFirstValues(response)) {
 		if db[0] == i.database {
 			found = true
 			break
@@ -99,8 +98,7 @@ func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 		return nil
 	}
 
-	q = influx.NewQuery(fmt.Sprintf(queryCreateDatabase, i.database), "", "")
-	response, err = i.client.Query(q)
+	response, err = i.query(fmt.Sprintf(queryCreateDatabase, i.database))
 	if err != nil {
 		return derrors.NewUnavailableError("unable to create database", err).WithParams(i.database)
 	}
@@ -146,4 +144,57 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData, extra
 	}
 
 	return nil
+}
+
+// List available metrics. If tagSelector is empty, return all available,
+// if tagSelector contains key-value pairs, return metrics available
+// for the union of those tags
+func (i *InfluxDBProvider) ListMetrics(tagSelector map[string]string) ([]string, derrors.Error) {
+	where := whereClause([]string{whereClauseFromTags(tagSelector)})
+	response, err := i.query(fmt.Sprintf(queryListMetrics, where))
+	if err != nil {
+		return nil, derrors.NewUnavailableError("unable to list metrics", err)
+	}
+
+	return getFirstValueStrings(response), nil
+}
+
+// Query specific metric. If tagSelector is empty, return all values
+// available, aggregated with aggr. If tagSelector is contains
+// key-value pairs, return values for the union of those tags,
+// aggregated with aggr. If tagSelector contains a single entry,
+// values for that specific tag are returned and aggr is ignored.
+func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector map[string]string, timeRange metricstorage.TimeRange, aggr metricstorage.AggregationMethod) ([]metricstorage.Value, derrors.Error) {
+	return nil, nil
+}
+
+func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
+	query := influx.NewQuery(q, i.database, "")
+	response, err := i.client.Query(query)
+	if err == nil {
+		err = response.Error()
+	}
+	return response, err
+}
+
+func getFirstValues(response *influx.Response) [][]interface{} {
+	if response == nil || len(response.Results) == 0 {
+		return nil
+	}
+	results := response.Results[0]
+
+	if len(results.Series) == 0 {
+		return nil
+	}
+	return results.Series[0].Values
+}
+
+func getFirstValueStrings(response *influx.Response) []string {
+	values := getFirstValues(response)
+	list := make([]string, 0, len(values))
+	for _, v := range(values) {
+		list = append(list, v[0].(string))
+	}
+
+	return list
 }
