@@ -7,6 +7,7 @@ package agent
 import (
 	"context"
 	"github.com/nalej/derrors"
+	"github.com/nalej/edge-controller/internal/pkg/edgeplugin"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
@@ -84,10 +85,22 @@ func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) de
 
 func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest, ip string) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
 	// TODO: Verify clock sync
-	// TODO: Handle plugin data
-	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
 
+	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
 	m.notifier.AgentAlive(request.AssetId, ip)
+
+	// Handle plugin data
+	for _, data := range(request.GetPluginData()) {
+		derr := edgeplugin.HandleAgentData(data)
+		// TODO: Think about failure modes - do we want to collect
+		// errors and handle what we can, handle nothing if there is
+		// an error (which requires rollback or commit) or just
+		// stop on the first error (current mode of operation).
+		if derr != nil {
+			return nil, derr
+		}
+	}
+
 	pending, err := m.provider.GetPendingOperations(request.AssetId, true)
 	if err != nil{
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent")

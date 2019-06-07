@@ -8,6 +8,7 @@ import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/version"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"time"
 )
 
@@ -56,7 +57,9 @@ type Config struct {
 	// Geolocation
 	Geolocation string
 
-
+	// Plugin configuration - using Viper to be flexible so it's easy to
+	// add new plugins
+	PluginConfig *viper.Viper
 }
 
 // Validate the current configuration.
@@ -111,4 +114,7 @@ func (conf *Config) Print() {
 	}
 	log.Info().Interface("AlivePeriod", conf.AlivePeriod).Msg("Alive Period")
 	log.Info().Str("Geolocation", conf.Geolocation).Msg("Edge Controller Location")
+	for _, k := range(conf.PluginConfig.AllKeys()) {
+		log.Info().Interface(k, conf.PluginConfig.Get(k)).Msg("Plugin configuration option")
+	}
 }
