@@ -12,6 +12,7 @@ import (
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"github.com/satori/go.uuid"
 )
@@ -34,7 +35,26 @@ func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.
 func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
-	return nil, nil
+
+	log.Info().Interface("request", request).Msg("Triggering agent operation")
+
+	operation := entities.NewAgentOpRequestFromGRPC(request)
+
+	// adds the operation
+	err := m.provider.AddPendingOperation(*operation)
+	if err != nil {
+		return nil, conversions.ToDerror(err)
+	}
+
+	return &grpc_inventory_manager_go.AgentOpResponse{
+		OrganizationId:		request.OrganizationId,
+		EdgeControllerId:	request.EdgeControllerId,
+		AssetId:			request.AssetId,
+		OperationId: 		request.OperationId,
+		Timestamp:			operation.Created,
+		Status:				grpc_inventory_manager_go.AgentOpStatus_SCHEDULED,
+		Info: "",
+	}, nil
 }
 // Configure changes specific configuration options of the Edge Controller
 // and/or Edge Controller plugins

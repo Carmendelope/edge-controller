@@ -107,6 +107,8 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 		// In this case the error is not returned to the agent as it cannot do anything.
 		return &grpc_edge_controller_go.CheckResult{}, nil
 	}
+	log.Info().Str("assetID", request.AssetId).Int("pending operation", len (pending)).Msg("sending pending operation to the agent")
+
 	// Return empty message
 	if len(pending) == 0{
 		return &grpc_edge_controller_go.CheckResult{}, nil
