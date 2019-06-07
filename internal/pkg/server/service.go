@@ -274,6 +274,7 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 		Permissions: map[string]interceptorConfig.Permission{
 			"/edge_controller.Agent/AgentJoin": {Must: []string{"APIKEY"}},
 			"/edge_controller.Agent/AgentCheck": {Must: []string{"APIKEY"}},
+			"/edge_controller.Agent/CallbackAgentOperation": {Must: []string{"APIKEY"}},
 		}}, "not-used", "authorization")
 
 	x509Cert, err := tls.X509KeyPair([]byte(s.Configuration.CaCert.Certificate), []byte(s.Configuration.CaCert.PrivateKey))
