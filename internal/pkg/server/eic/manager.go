@@ -5,6 +5,7 @@
 package eic
 
 import (
+	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
@@ -45,16 +46,7 @@ func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector)
 	// TODO: Potentially check if the Organization ID and Edge
 	// Controller ID on the selector matches.
 
-	// Create tag selector from assets
-	var tagSelector map[string][]string = nil
-	assets := selector.GetAssetIds()
-	if len(assets) > 0 {
-		tagSelector = map[string][]string{
-			"asset_id": assets,
-		}
-	}
-
-	metrics, derr := m.metricStorageProvider.ListMetrics(tagSelector)
+	metrics, derr := m.metricStorageProvider.ListMetrics(entities.NewTagSelectorFromGRPC(selector))
 	if derr != nil {
 		return nil, derr
 	}

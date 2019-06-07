@@ -55,3 +55,35 @@ func NewMetricsDataFromGRPC(data *grpc_edge_controller_go.PluginData) (*MetricsD
 
 	return metricsData, nil
 }
+
+type MetricValue struct {
+	Timestamp time.Time
+	Value int64
+}
+
+type TimeRange struct {
+	// Either Timestamp != 0 && (Start == End == Resolution == 0),
+	// or Timestamp == 0 && (Start != 0 || End != 0)
+
+	// Timestamp is set to request single data point
+	Timestamp time.Time
+
+	// Start indicates the start of the time range;
+	// Start == 0 means starting from oldest data available
+	Start time.Time
+
+	// End indicates the end of the time range;
+	// End == 0 means ending at newest data available
+	End time.Time
+
+	// Resolution indicates the duration between returned data points;
+        // If Resolution == 0, return a single, aggregated (avg) data point
+	Resolution time.Duration
+}
+
+type AggregationMethod string
+const (
+	AggregateNone AggregationMethod = "none"
+	AggregateSum AggregationMethod = "_sum"
+	AggregateAvg AggregationMethod = "_avg"
+)

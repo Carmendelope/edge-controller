@@ -205,6 +205,19 @@ func ValidEdgeControllerID(edge *grpc_inventory_go.EdgeControllerId) derrors.Err
 	return nil
 }
 
+type TagSelector map[string][]string
+
+func NewTagSelectorFromGRPC(selector *grpc_inventory_manager_go.AssetSelector) TagSelector {
+	var tagSelector map[string][]string = nil
+	assets := selector.GetAssetIds()
+	if len(assets) > 0 {
+		tagSelector = map[string][]string{
+		"asset_id": assets,
+		}
+	}
+
+	return tagSelector
+}
 
 func ValidAssetSelector(selector *grpc_inventory_manager_go.AssetSelector) derrors.Error {
 	// Any selector is in theory valid. We could check organization id and

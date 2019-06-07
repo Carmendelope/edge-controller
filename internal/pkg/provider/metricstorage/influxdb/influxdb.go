@@ -164,7 +164,7 @@ func (i *InfluxDBProvider) ListMetrics(tagSelector map[string][]string) ([]strin
 // key-value pairs, return values for the union of those tags,
 // aggregated with aggr. If tagSelector contains a single entry,
 // values for that specific tag are returned and aggr is ignored.
-func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector map[string][]string, timeRange metricstorage.TimeRange, aggr metricstorage.AggregationMethod) ([]metricstorage.Value, derrors.Error) {
+func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector map[string][]string, timeRange entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
 	return nil, nil
 }
 
