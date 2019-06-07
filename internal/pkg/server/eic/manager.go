@@ -33,6 +33,7 @@ func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
 // next connection.
 func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
 
+	log.Info().Interface("request", request).Msg("Triggering agent operation")
 
 	operation := entities.NewAgentOpRequestFromGRPC(request)
 

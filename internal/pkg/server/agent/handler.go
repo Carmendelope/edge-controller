@@ -75,6 +75,7 @@ func (h *Handler) AgentCheck(ctx context.Context, request *grpc_edge_controller_
 }
 
 func (h *Handler) CallbackAgentOperation(ctx context.Context, response *grpc_inventory_manager_go.AgentOpResponse) (*grpc_common_go.Success, error) {
+	log.Info().Interface("response", response).Msg("Callback agent operation")
 	err := entities.ValidAgentOpResponse(response)
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)

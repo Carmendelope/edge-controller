@@ -49,6 +49,7 @@ func (aor * AgentOpRequest) ToGRPC() *grpc_inventory_manager_go.AgentOpRequest{
 		Operation:            aor.Operation,
 		Plugin:               aor.Plugin,
 		Params:               aor.Params,
+		OperationId:          aor.OrganizationId,
 	}
 }
 
