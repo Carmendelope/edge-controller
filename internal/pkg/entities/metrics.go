@@ -13,6 +13,7 @@ import (
 	"github.com/nalej/derrors"
 
 	"github.com/nalej/grpc-edge-controller-go"
+	"github.com/nalej/grpc-inventory-manager-go"
 )
 
 type MetricsData struct {
@@ -81,9 +82,41 @@ type TimeRange struct {
 	Resolution time.Duration
 }
 
+func ValidTimeRange(timeRange *grpc_inventory_manager_go.QueryMetricsRequest_TimeRange) derrors.Error {
+	if !(timeRange.GetTimestamp() == 0) {
+		if timeRange.GetTimeStart() != 0 || timeRange.GetTimeEnd() != 0 || timeRange.GetResolution() != 0 {
+			return derrors.NewInvalidArgumentError("timestamp is set; start, end and resolution should be 0").
+				WithParams(timeRange.GetTimestamp(), timeRange.GetTimeStart(),
+				timeRange.GetTimeEnd(), timeRange.GetResolution())
+		}
+	} else {
+		if timeRange.GetTimeStart() == 0 && timeRange.GetTimeEnd() == 0 {
+			return derrors.NewInvalidArgumentError("timestamp is not set; either start, end or both should be set").
+				WithParams(timeRange.GetTimestamp(), timeRange.GetTimeStart(),
+				timeRange.GetTimeEnd(), timeRange.GetResolution())
+		}
+	}
+
+	return nil
+}
+
 type AggregationMethod string
 const (
 	AggregateNone AggregationMethod = "none"
 	AggregateSum AggregationMethod = "_sum"
 	AggregateAvg AggregationMethod = "_avg"
 )
+
+func ValidQueryMetricsRequest(request *grpc_inventory_manager_go.QueryMetricsRequest) derrors.Error {
+	derr := ValidAssetSelector(request.GetAssets())
+	if derr != nil {
+		return derr
+	}
+
+	derr = ValidTimeRange(request.GetTimeRange())
+	if derr != nil {
+		return derr
+	}
+
+	return nil
+}
