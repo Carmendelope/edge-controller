@@ -149,7 +149,7 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData, extra
 // List available metrics. If tagSelector is empty, return all available,
 // if tagSelector contains key-value pairs, return metrics available
 // for the union of those tags
-func (i *InfluxDBProvider) ListMetrics(tagSelector map[string][]string) ([]string, derrors.Error) {
+func (i *InfluxDBProvider) ListMetrics(tagSelector entities.TagSelector) ([]string, derrors.Error) {
 	where := whereClause([]string{whereClauseFromTags(tagSelector)})
 	response, err := i.query(fmt.Sprintf(queryListMetrics, where))
 	if err != nil {
@@ -164,7 +164,7 @@ func (i *InfluxDBProvider) ListMetrics(tagSelector map[string][]string) ([]strin
 // key-value pairs, return values for the union of those tags,
 // aggregated with aggr. If tagSelector contains a single entry,
 // values for that specific tag are returned and aggr is ignored.
-func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector map[string][]string, timeRange entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
+func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
 	return nil, nil
 }
 

@@ -229,7 +229,9 @@ func ValidAssetSelector(selector *grpc_inventory_manager_go.AssetSelector) derro
 	// labels and group IDs, so the inventory manager has to translate from
 	// those to asset IDs. To make sure that's done, we'll check if we don't
 	// have those fields set anymore.
-
+	if selector == nil {
+		return derrors.NewInvalidArgumentError("empty asset selector")
+	}
 	if len(selector.GetGroupIds()) > 0 {
 		return derrors.NewInvalidArgumentError("cannot select on group IDs at Edge Controller")
 	}
