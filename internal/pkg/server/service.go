@@ -210,26 +210,36 @@ func (s *Service) Run() error {
 	return s.LaunchAgentServer(providers, clients)
 }
 
+func (s *Service) sendAliveMessage()  {
+	log.Info().Msg("sending alive message")
+
+	proxyClient := s.GetClients().inventoryProxyClient
+	// Send alive message to proxy
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
+		OrganizationId: s.Configuration.OrganizationId,
+		EdgeControllerId: s.Configuration.EdgeControllerId,
+	})
+	if err != nil {
+		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error sending the alive message")
+	}
+	cancel()
+
+}
+
 // aliveLoop sends alive message to proxy
 func (s*Service) aliveLoop() {
 
-	proxyClient := s.GetClients().inventoryProxyClient
+	// send the first ONLINE message
+	s.sendAliveMessage()
+
+	// every AlivePeriod seconds ...
 	ticker := time.NewTicker(s.Configuration.AlivePeriod)
 
 	for {
 		select {
 			case <- ticker.C:
-				log.Info().Msg("alive")
-				// Send alive message to proxy
-				ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-				_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
-					OrganizationId: s.Configuration.OrganizationId,
-					EdgeControllerId: s.Configuration.EdgeControllerId,
-				})
-				if err != nil {
-					log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error sending the alive message")
-				}
-				cancel()
+				s.sendAliveMessage()
 		}
 	}
 }
@@ -281,6 +291,7 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 		Permissions: map[string]interceptorConfig.Permission{
 			"/edge_controller.Agent/AgentJoin": {Must: []string{"APIKEY"}},
 			"/edge_controller.Agent/AgentCheck": {Must: []string{"APIKEY"}},
+			"/edge_controller.Agent/CallbackAgentOperation": {Must: []string{"APIKEY"}},
 		}}, "not-used", "authorization")
 
 	x509Cert, err := tls.X509KeyPair([]byte(s.Configuration.CaCert.Certificate), []byte(s.Configuration.CaCert.PrivateKey))
