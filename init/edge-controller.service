@@ -1,0 +1,12 @@
+[Unit]
+Description=Edge Controller service
+Wants=vpnclient.service
+After=network.target vpnclient.service
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/bin/edge-controller run --joinTokenPath=/etc/edge-controller/joinToken.json --useBBoltProviders --bboltpath=/var/lib/edge-controller/database.db --name EC001 --labels=name:test --geolocation="Madrid, Madrid, Spain"
+[Install]
+WantedBy=multi-user.target
