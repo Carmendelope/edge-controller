@@ -84,7 +84,6 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:7e84371aa99782092df4d9175df1b828e9dbbbd344fcc50bcf3ced3e9d3c31ce"
   name = "github.com/influxdata/influxdb1-client"
   packages = [
@@ -203,12 +202,12 @@
   version = "v0.0.16"
 
 [[projects]]
-  digest = "1:50c8af477ee3c60754673b36c687262c26850fbe0b95936a844d37eff973ab80"
+  digest = "1:f838ed0c01d45f28e75adb29ad9b18f82d04bba5377f1ca435010549080f9d6f"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "e647671983d66ba9092ee48533967e16c55b50b7"
-  version = "v0.0.30"
+  revision = "08f1f97766a3956e71e2650daf4c1d72627c185f"
+  version = "v0.0.31"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
