@@ -89,11 +89,19 @@ type TimeRange struct {
 	Resolution time.Duration
 }
 
+func TimeFromGRPC(in int64) time.Time {
+	if in == 0 {
+		return time.Time{}
+	}
+
+	return time.Unix(in, 0).UTC()
+}
+
 func NewTimeRangeFromGRPC(timeRange *grpc_inventory_manager_go.QueryMetricsRequest_TimeRange) *TimeRange {
 	return &TimeRange{
-		Timestamp: time.Unix(timeRange.GetTimestamp(), 0).UTC(),
-		Start: time.Unix(timeRange.GetTimeStart(), 0).UTC(),
-		End: time.Unix(timeRange.GetTimeEnd(), 0).UTC(),
+		Timestamp: TimeFromGRPC(timeRange.GetTimestamp()),
+		Start: TimeFromGRPC(timeRange.GetTimeStart()),
+		End: TimeFromGRPC(timeRange.GetTimeEnd()),
 		Resolution: time.Duration(timeRange.GetResolution()) * time.Second,
 	}
 }
@@ -123,8 +131,8 @@ func (a AggregationMethod) String() string {
 
 const (
 	AggregateNone AggregationMethod = "none"
-	AggregateSum AggregationMethod = "_sum"
-	AggregateAvg AggregationMethod = "_avg"
+	AggregateSum AggregationMethod = "sum"
+	AggregateAvg AggregationMethod = "mean"
 )
 
 func AggregationMethodFromGRPC(method grpc_inventory_manager_go.QueryMetricsRequest_AggregationType) AggregationMethod {
@@ -148,7 +156,7 @@ func ValidQueryMetricsRequest(request *grpc_inventory_manager_go.QueryMetricsReq
 		return derr
 	}
 
-	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() != grpc_inventory_manager_go.QueryMetricsRequest_NONE {
+	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() == grpc_inventory_manager_go.QueryMetricsRequest_NONE {
 		return derrors.NewInvalidArgumentError("metrics for more than one asset requested without aggregation method")
 	}
 

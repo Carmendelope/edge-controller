@@ -7,7 +7,9 @@ package influxdb
 // InfluxDB Metric Storage provider
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
 	influx "github.com/influxdata/influxdb1-client/v2"
 
@@ -159,13 +161,101 @@ func (i *InfluxDBProvider) ListMetrics(tagSelector entities.TagSelector) ([]stri
 	return getFirstValueStrings(response), nil
 }
 
+var fromOverrides = map[string]string{
+	// Calculate millicores used
+	// TBD: all fields
+	"cpu": "(SELECT round((1-time_idle/(time_idle+time_system+time_user))*1000) AS usage, asset_id, cpu FROM cpu)",
+}
+
+var metricFields = map[string]string{
+	"cpu": "usage",
+	"mem": "used",
+	"disk": "used",
+	"diskio": "read_bytes",
+	"net": "bytes_recv",
+}
+
+var sumTags = map[string]string{
+	"cpu": "cpu",
+	"disk": "device",
+	"diskio": "name",
+	"net": "interface",
+}
+
+var derivativeMetric = map[string]bool{
+	"diskio": true,
+	"net": true,
+}
+
 // Query specific metric. If tagSelector is empty, return all values
 // available, aggregated with aggr. If tagSelector is contains
 // key-value pairs, return values for the union of those tags,
 // aggregated with aggr. If tagSelector contains a single entry,
 // values for that specific tag are returned and aggr is ignored.
 func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
-	return nil, nil
+	// TODO: Pre-process diskio_read, diskio_write
+
+	query := generateQuery(metric, tagSelector, timeRange, aggr)
+	log.Debug().Str("query", query).Msg("generated query")
+
+	response, err := i.query(query)
+	if err != nil {
+		return nil, derrors.NewInternalError("error executing influx query", err)
+	}
+
+	return metricValuesFromResponse(response)
+}
+
+func metricValuesFromResponse(response *influx.Response) ([]entities.MetricValue, derrors.Error) {
+	values := getFirstValues(response)
+	result := make([]entities.MetricValue, 0, len(values))
+	for _, v := range(values) {
+		timestamp, derr := timestampFromInterface(v[0])
+		if derr != nil {
+			return nil, derr
+		}
+		value, derr := valueFromInterface(v[1])
+		if derr != nil {
+			return nil, derr
+		}
+		result = append(result, entities.MetricValue{
+			Timestamp: timestamp,
+			Value: value,
+		})
+	}
+
+	return result, nil
+}
+
+func timestampFromInterface(i interface{}) (time.Time, derrors.Error) {
+	tsString, ok := i.(string)
+	if !ok {
+		return time.Time{}, derrors.NewInternalError("error retrieving value").WithParams(i)
+	}
+	timestamp, err := time.Parse(time.RFC3339, tsString)
+	if err != nil {
+		return time.Time{}, derrors.NewInternalError("error parsing timestamp", err).WithParams(tsString)
+	}
+
+	return timestamp, nil
+}
+
+func valueFromInterface(i interface{}) (int64, derrors.Error) {
+	jsonValue, ok := i.(json.Number)
+	if !ok {
+		return 0, derrors.NewInternalError("error retrieving value").WithParams(i)
+	}
+	// First try to get int; if that fails, get float and convert to int
+	value, err := jsonValue.Int64()
+	if err != nil {
+		fvalue, err := jsonValue.Float64()
+		if err != nil {
+			return 0, derrors.NewInternalError("error converting result to int", err).WithParams(jsonValue)
+		}
+		value = int64(fvalue)
+	}
+
+	return value, nil
 }
 
 func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
