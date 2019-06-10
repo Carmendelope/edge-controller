@@ -174,6 +174,7 @@ func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSe
 
 	response, err := i.query(query)
 	if err != nil {
+		log.Error().Err(err).Msg("influxdb query error")
 		return nil, derrors.NewInternalError("error executing influx query", err)
 	}
 

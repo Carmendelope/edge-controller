@@ -87,6 +87,12 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 		whereClause,
 	)
 
+	// If we want a single point in time, we set resolution to 1s to not
+	// miss anything, and later limit to a single value
+	if !timeRange.Timestamp.IsZero() {
+		timeRange.Resolution = time.Second
+	}
+
 	// Add inner summation if needed (e.g., all CPUs, all disks per asset)
 	sumTag, found := sumTags[metric]
 	if found {
@@ -119,6 +125,13 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 			selectFromFuncFieldAs("derivative", selector, newSelector),
 			selectClause,
 		)
+		selector = newSelector
+	}
+
+	// Now that we've summed and aggregated by asset, we can limit the
+	// result for a single point in time
+	if !timeRange.Timestamp.IsZero() {
+		selectClause = fmt.Sprintf("SELECT last(%s) FROM (%s)", selector, selectClause)
 	}
 
 	return selectClause
@@ -156,8 +169,6 @@ func whereClause(subclauses []string) string {
 	return fmt.Sprintf("WHERE %s", clause)
 }
 
-var timeEpsilon = time.Second * 30
-
 func whereClauseFromTime(timeRange *entities.TimeRange) string {
 	start := timeRange.Start
 	end := timeRange.End
@@ -165,8 +176,7 @@ func whereClauseFromTime(timeRange *entities.TimeRange) string {
 	// single point in time actually will be average over a
 	// range to avoid having no data during that time
 	if !timeRange.Timestamp.IsZero() {
-		start = timeRange.Timestamp.Add(0 - timeEpsilon)
-		end = timeRange.Timestamp.Add(timeEpsilon)
+		end = timeRange.Timestamp
 	}
 
 	clauses := make([]string, 0, 2)
