@@ -14,6 +14,46 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 )
 
+const (
+	readSuffix = "_read"
+	writeSuffix = "_write"
+)
+
+var fromOverrides = map[string]string{
+	// Calculate millicores used
+	"cpu": "(SELECT round((1-time_idle/(time_user+time_system+time_nice+time_iowait+time_irq+time_softirq+time_steal+time_idle))*1000) AS usage, asset_id, cpu FROM cpu)",
+	"diskio_read": "diskio",
+	"diskio_write": "diskio",
+	"net_read": "net",
+	"net_write": "net",
+}
+
+var metricFields = map[string]string{
+	"cpu": "usage",
+	"mem": "used",
+	"disk": "used",
+	"diskio_read": "read_bytes",
+	"diskio_write": "write_bytes",
+	"net_read": "bytes_recv",
+	"net_write": "bytes_sent",
+}
+
+var sumTags = map[string]string{
+	"cpu": "cpu",
+	"disk": "device",
+	"diskio_read": "name",
+	"diskio_write": "name",
+	"net_read": "interface",
+	"net_write": "interface",
+}
+
+var derivativeMetric = map[string]bool{
+	"diskio_read": true,
+	"diskio_write": true,
+	"net_read": true,
+	"net_write": true,
+}
+
 // If we need more flexibility than the queries this function can generate,
 // we probably want to create something similar to a query tree
 func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) string {

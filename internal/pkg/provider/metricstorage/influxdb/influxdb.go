@@ -158,33 +158,7 @@ func (i *InfluxDBProvider) ListMetrics(tagSelector entities.TagSelector) ([]stri
 		return nil, derrors.NewUnavailableError("unable to list metrics", err)
 	}
 
-	return getFirstValueStrings(response), nil
-}
-
-var fromOverrides = map[string]string{
-	// Calculate millicores used
-	// TBD: all fields
-	"cpu": "(SELECT round((1-time_idle/(time_idle+time_system+time_user))*1000) AS usage, asset_id, cpu FROM cpu)",
-}
-
-var metricFields = map[string]string{
-	"cpu": "usage",
-	"mem": "used",
-	"disk": "used",
-	"diskio": "read_bytes",
-	"net": "bytes_recv",
-}
-
-var sumTags = map[string]string{
-	"cpu": "cpu",
-	"disk": "device",
-	"diskio": "name",
-	"net": "interface",
-}
-
-var derivativeMetric = map[string]bool{
-	"diskio": true,
-	"net": true,
+	return getMetrics(response), nil
 }
 
 // Query specific metric. If tagSelector is empty, return all values
@@ -279,11 +253,24 @@ func getFirstValues(response *influx.Response) [][]interface{} {
 	return results.Series[0].Values
 }
 
-func getFirstValueStrings(response *influx.Response) []string {
+// Some InfluxDB measurements are exposed as a separate read and write metric,
+// each mapping to the same measurement but a different field.
+var rwMetrics = map[string]bool{
+	"diskio": true,
+	"net": true,
+}
+
+func getMetrics(response *influx.Response) []string {
 	values := getFirstValues(response)
 	list := make([]string, 0, len(values))
 	for _, v := range(values) {
-		list = append(list, v[0].(string))
+		strVal := v[0].(string)
+		if rwMetrics[strVal] {
+			list = append(list, strVal + readSuffix)
+			list = append(list, strVal + writeSuffix)
+		} else {
+			list = append(list, strVal)
+		}
 	}
 
 	return list
