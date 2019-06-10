@@ -85,10 +85,7 @@ func (m *MockupAssetProvider) GetPendingOperations(assetID string, removeEntries
 func (m *MockupAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.Error{
 	m.Lock()
 	defer m.Unlock()
-	_, exists := m.pendingResult[op.OperationId]
-	if exists{
-		return derrors.NewAlreadyExistsError("operation result already registered").WithParams(op.OperationId)
-	}
+	
 	m.pendingResult[op.OperationId] = op
 	return nil
 }
