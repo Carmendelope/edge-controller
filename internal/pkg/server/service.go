@@ -20,6 +20,7 @@ import (
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
+	plugin "github.com/nalej/infra-net-plugin"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -112,6 +113,12 @@ func (s *Service) Run() error {
 		log.Fatal().Str("error", valErr.DebugReport()).Msg("Invalid configuration")
 	}
 	s.Configuration.Print()
+
+	// Start plugins
+	derr := startRegisteredPlugins(getSubConfig(s.Configuration.PluginConfig, plugin.DefaultPluginPrefix))
+	if derr != nil {
+		log.Fatal().Str("error", derr.DebugReport()).Msg("error starting plugins")
+	}
 
 	//If the controller has not done the join yet, it will have to be done
 	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name,
