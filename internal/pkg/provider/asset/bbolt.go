@@ -171,6 +171,7 @@ func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.
 		return checkErr
 	}
 
+
 	toAddBytes, err := json.Marshal(op)
 	if err != nil {
 		return conversions.ToDerror(err)
@@ -183,15 +184,7 @@ func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.
 		}
 
 		key := []byte(op.OperationId)
-		// check if already exists
-		res := bk.Get(key)
-
-		exists := res != nil
-		if exists {
-			return derrors.NewAlreadyExistsError("operation result already registered").WithParams(op.OperationId)
-		}
-
-		// add pending operation
+		// add pending operation (or rewrite previous result)
 		if err := bk.Put(key, toAddBytes); err != nil {
 			return derrors.NewInternalError("Cannot registry operation result")
 		}

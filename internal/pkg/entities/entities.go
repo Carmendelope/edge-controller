@@ -143,7 +143,7 @@ func (asi * AgentStartInfo) ToGRPC() * grpc_inventory_manager_go.AgentStartInfo{
 
 type AgentOpResponse struct{
 	// Created with when this information was received
-	Created int64 `json:"timestamp"`
+	Created int64 `json:"created"`
 	// OrganizationId with the organization identifier.
 	OrganizationId string `json:"organization_id,omitempty"`
 	// EdgeControllerId with the EIC identifier that facilitated the operation.
@@ -174,6 +174,8 @@ func NewAgentOpResponseFromGRPC(response * grpc_inventory_manager_go.AgentOpResp
 }
 
 func (aor * AgentOpResponse) ToGRPC() * grpc_inventory_manager_go.AgentOpResponse{
+
+
 	return &grpc_inventory_manager_go.AgentOpResponse{
 		OrganizationId:       aor.OrganizationId,
 		EdgeControllerId:     aor.EdgeControllerId,

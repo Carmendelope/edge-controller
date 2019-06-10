@@ -96,6 +96,34 @@ func (n * Notifier) sendAliveMessages() bool{
 	return true
 }
 
+// sendPendingResponses send the results of the last operations to the management cluster
+// if an error occurs, the response is stored again in pending responses
+func (n *Notifier) sendPendingResponses() {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+
+	// get pending responses from database.
+	pendingRes, err := n.provider.GetPendingOpResponses(true)
+	if err != nil {
+		log.Warn().Str("error", err.DebugReport()).Msg("error getting pending operation responses")
+		return
+	}
+
+	for _, res := range pendingRes {
+		_, err := n.mngtClient.CallbackAgentOperation(ctx, res.ToGRPC())
+		if err != nil {
+			log.Warn().Str("assetID", res.AssetId).Str("operation_id", res.OperationId).Str("error", conversions.ToDerror(err).DebugReport()).
+				Msg("error sending agent response")
+			// store again in the pending op responses
+			errAdd := n.provider.AddOpResponse(res)
+			if errAdd != nil{
+				log.Warn().Str("assetID", res.AssetId).Str("operation_id", res.OperationId).Msg("storing the agent response")
+			}
+		}
+	}
+
+}
+
 // notifyManagementCluster compiles the list of notifications to be sent to the management cluster regarding assets
 // being online.
 func (n *Notifier) notifyManagementCluster() {
@@ -103,7 +131,6 @@ func (n *Notifier) notifyManagementCluster() {
 	defer n.Unlock()
 	if len(n.assetAlive) > 0{
 		// TODO Implement send
-		log.Debug().Int("len", len(n.assetAlive)).Msg("sending agent alive notifications")
 		if n.sendAliveMessages(){
 			// If successfull, cleanup the map
 			for k := range n.assetAlive{
@@ -114,7 +141,7 @@ func (n *Notifier) notifyManagementCluster() {
 			}
 		}
 	}
-	// TODO Iteration over other elements
+	n.sendPendingResponses()
 }
 
 func (n * Notifier) NotifyAgentStart(start * grpc_inventory_manager_go.AgentStartInfo) derrors.Error{
