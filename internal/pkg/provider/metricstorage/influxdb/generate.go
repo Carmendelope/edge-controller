@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nalej/derrors"
+
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 )
 
@@ -56,7 +58,7 @@ var derivativeMetric = map[string]bool{
 
 // If we need more flexibility than the queries this function can generate,
 // we probably want to create something similar to a query tree
-func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) string {
+func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) (string, derrors.Error) {
 	// Determine what to select from. Mostly just a measurement,
 	// but sometimes (e.g., for CPU), we do some pre-processing
 	from, found := fromOverrides[metric]
@@ -74,7 +76,7 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 	// Determine what field our main metric is
 	metricValue, found := metricFields[metric]
 	if !found {
-		// TBD
+		return "", derrors.NewInvalidArgumentError("unsupported metric").WithParams(metric)
 	}
 
 	// First iteration of complete select
@@ -134,7 +136,7 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 		selectClause = fmt.Sprintf("SELECT last(%s) FROM (%s)", selector, selectClause)
 	}
 
-	return selectClause
+	return selectClause, nil
 }
 
 func whereClauseFromTags(tags map[string][]string) string {

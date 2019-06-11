@@ -169,7 +169,10 @@ func (i *InfluxDBProvider) ListMetrics(tagSelector entities.TagSelector) ([]stri
 func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
 	// TODO: Pre-process diskio_read, diskio_write
 
-	query := generateQuery(metric, tagSelector, timeRange, aggr)
+	query, derr := generateQuery(metric, tagSelector, timeRange, aggr)
+	if derr != nil {
+		return nil, derr
+	}
 	log.Debug().Str("query", query).Msg("generated query")
 
 	response, err := i.query(query)
