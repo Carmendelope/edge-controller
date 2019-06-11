@@ -194,6 +194,11 @@ func (s *Service) Run() error {
 	log.Info().Str("VpnUser", joinResponse.Credentials.Username).Str("pass", strings.Repeat("*", len(joinResponse.Credentials.Password))).
 		Msg("VPN credentials")
 
+	err = joinHelper.ExecuteDhClient()
+	if err != nil {
+		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error executing dhclient")
+	}
+
 	// Store organization_id, edge_controller_id and proxyName
 	s.Configuration.OrganizationId = joinResponse.OrganizationId
 	s.Configuration.EdgeControllerId = joinResponse.EdgeControllerId
@@ -204,10 +209,10 @@ func (s *Service) Run() error {
 	providers := s.GetProviders()
 	clients := s.GetClients()
 
-	// GetVPNIP
+	// GetVPNIP (if VPN_nicname has no IP -> Get it)
 	ip, err := joinHelper.GetVPNAddress()
 	if err != nil {
-		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error getting vpnAddress")
+			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error getting vpnAddress")
 	}
 
 	// EICStart

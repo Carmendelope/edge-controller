@@ -204,12 +204,24 @@ func (j * JoinHelper) ConfigureDNS () error {
 	return nil
 }
 
+func (j *JoinHelper) ExecuteDhClient () error {
+	dhclientCmd := fmt.Sprintf("dhclient vpn_%s", nicName)
+	cmd := exec.Command("/bin/sh", "-c", dhclientCmd)
+	err := cmd.Run()
+	if err != nil {
+		log.Warn().Str("command", dhclientCmd).Str("error", err.Error()).Msg("error executing")
+		return err
+	}
+	return nil
+
+}
+
 // GetIP enable IP4 forwarding and alter IP Table
 func (j * JoinHelper) GetIP () error{
 	// get IP
 	cmds := []string{"echo \"net.ipv4.ip_forward=1\" >> /etc/sysctl.conf",
-		"sysctl -p",
-		fmt.Sprintf("dhclient vpn_%s", nicName)}
+		"sysctl -p"}//,
+		//fmt.Sprintf("dhclient vpn_%s", nicName)}
 	for _, command := range cmds {
 		cmd := exec.Command("/bin/sh", "-c", command)
 		err := cmd.Run()
@@ -218,7 +230,9 @@ func (j * JoinHelper) GetIP () error{
 			return err
 		}
 	}
-	return nil
+
+	return j.ExecuteDhClient()
+	//return nil
 
 }
 
