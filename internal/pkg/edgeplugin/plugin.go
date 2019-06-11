@@ -16,5 +16,5 @@ type EdgePlugin interface {
 	plugin.Plugin
 
 	// Handle plugin-specific data received from Agent
-	HandleAgentData(data *grpc_edge_controller_go.PluginData) (derrors.Error)
+	HandleAgentData(assetId string, data *grpc_edge_controller_go.PluginData) (derrors.Error)
 }
