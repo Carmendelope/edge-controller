@@ -11,6 +11,7 @@ import (
 	"github.com/nalej/authx-interceptors/pkg/interceptor/apikey"
 	interceptorConfig "github.com/nalej/authx-interceptors/pkg/interceptor/config"
 	assetProvider "github.com/nalej/edge-controller/internal/pkg/provider/asset"
+	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
 	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/edge-controller/internal/pkg/server/eic"
@@ -46,6 +47,7 @@ func NewService(conf config.Config) *Service {
 
 type Providers struct{
 	assetProvider assetProvider.Provider
+	metricStorageProvider metricstorage.Provider
 }
 
 type Clients struct{
@@ -77,16 +79,34 @@ func (s*Service) CreateBBoltProviders() * Providers{
 }
 
 func (s*Service) GetProviders() * Providers{
+	var providers *Providers = nil
+
 	if s.Configuration.UseInMemoryProviders{
-		return s.CreateInMemoryProviders()
-	}else {
-		if s.Configuration.UseBBoltProviders{
-			return s.CreateBBoltProviders()
-		}
+		providers = s.CreateInMemoryProviders()
+	} else if s.Configuration.UseBBoltProviders{
+		providers = s.CreateBBoltProviders()
+	} else {
+		log.Fatal().Msg("unsupported type of provider")
+		return nil
 	}
 
-	log.Fatal().Msg("unsupported type of provider")
-	return nil
+	// In theory we can have different configurations for the metric
+	// storage and retrieval - but not now
+	metricConf, derr := metricstorage.NewConnectionConfig(getSubConfig(s.Configuration.PluginConfig, plugin.DefaultPluginPrefix).Sub("metrics"))
+	if derr != nil {
+		log.Fatal().Err(derr).Str("trace", derr.DebugReport()).Msg("unable to create metric storage provider configuration")
+	}
+	providers.metricStorageProvider, derr = metricstorage.NewProvider(metricConf)
+	if derr != nil {
+		log.Fatal().Err(derr).Str("trace", derr.DebugReport()).Msg("unable to create metric storage provider")
+	}
+
+	derr = providers.metricStorageProvider.Connect()
+	if derr != nil {
+		log.Fatal().Err(derr).Str("trace", derr.DebugReport()).Msg("unable to connect to metric storage provider")
+	}
+
+	return providers
 }
 
 func (s*Service) GetClients() * Clients{
@@ -256,7 +276,7 @@ func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error
 		log.Fatal().Errs("failed to listen: %v", []error{err})
 	}
 
-	eicManager := eic.NewManager(s.Configuration, providers.assetProvider)
+	eicManager := eic.NewManager(s.Configuration, providers.assetProvider, providers.metricStorageProvider)
 	eicHandler := eic.NewHandler(eicManager)
 
 	grpcEICServer := grpc.NewServer()

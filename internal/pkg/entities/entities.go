@@ -208,6 +208,41 @@ func ValidEdgeControllerID(edge *grpc_inventory_go.EdgeControllerId) derrors.Err
 	return nil
 }
 
+type TagSelector map[string][]string
+
+func NewTagSelectorFromGRPC(selector *grpc_inventory_manager_go.AssetSelector) TagSelector {
+	var tagSelector map[string][]string = nil
+	assets := selector.GetAssetIds()
+	if len(assets) > 0 {
+		tagSelector = map[string][]string{
+		"asset_id": assets,
+		}
+	}
+
+	return tagSelector
+}
+
+func ValidAssetSelector(selector *grpc_inventory_manager_go.AssetSelector) derrors.Error {
+	// Any selector is in theory valid. We could check organization id and
+	// edge controller id, but that's easier done somewhere where we have
+	// that info.
+
+	// However, the edge controller likely doesn't know about user-defined
+	// labels and group IDs, so the inventory manager has to translate from
+	// those to asset IDs. To make sure that's done, we'll check if we don't
+	// have those fields set anymore.
+	if selector == nil {
+		return derrors.NewInvalidArgumentError("empty asset selector")
+	}
+	if len(selector.GetGroupIds()) > 0 {
+		return derrors.NewInvalidArgumentError("cannot select on group IDs at Edge Controller")
+	}
+	if len(selector.GetLabels()) > 0 {
+		return derrors.NewInvalidArgumentError("cannot select on labels at Edge Controller")
+	}
+	return nil
+}
+
 func ValidAgentOpRequest (request *grpc_inventory_manager_go.AgentOpRequest) derrors.Error{
 	if request.OrganizationId == "" {
 		return derrors.NewInvalidArgumentError("organization_id cannot be empty")

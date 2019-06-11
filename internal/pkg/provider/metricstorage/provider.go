@@ -32,6 +32,17 @@ type Provider interface {
 	// Store metrics
 	StoreMetricsData(data *entities.MetricsData, extraTags map[string]string) derrors.Error
 
+	// List available metrics. If tagSelector is empty, return all available,
+	// if tagSelector contains key-value pairs, return metrics available
+	// for the union of those tags
+	ListMetrics(tagSelector entities.TagSelector) ([]string, derrors.Error)
+
+	// Query specific metric. If tagSelector is empty, return all values
+	// available, aggregated with aggr. If tagSelector is contains
+	// key-value pairs, return values for the union of those tags,
+	// aggregated with aggr. If tagSelector contains a single entry,
+	// values for that specific tag are returned and aggr is ignored.
+	QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error)
 }
 
 type ProviderType string

@@ -7,6 +7,7 @@ package eic
 import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
+	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
@@ -19,10 +20,12 @@ import (
 type Manager struct{
 	config config.Config
 	provider asset.Provider
+
+	metricStorageProvider metricstorage.Provider
 }
 
-func NewManager(cfg config.Config, assetProvider asset.Provider,) Manager{
-	return Manager{cfg, assetProvider}
+func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider) Manager{
+	return Manager{cfg, assetProvider, metricStorageProvider}
 }
 
 // Unlink the receiving EIC.
@@ -60,12 +63,75 @@ func (m * Manager)Configure(request *grpc_inventory_manager_go.ConfigureEICReque
 }
 // ListMetrics returns available metrics for a certain selection of assets
 func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
-	return nil, nil
+	// TODO: Potentially check if the Organization ID and Edge
+	// Controller ID on the selector matches.
+
+	metrics, derr := m.metricStorageProvider.ListMetrics(entities.NewTagSelectorFromGRPC(selector))
+	if derr != nil {
+		return nil, derr
+	}
+
+	metricsList := &grpc_inventory_manager_go.MetricsList{
+		Metrics: metrics,
+	}
+
+	return metricsList, nil
 }
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller
 func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error){
-	return nil, nil
+	tagSelector := entities.NewTagSelectorFromGRPC(request.GetAssets())
+	timeRange := entities.NewTimeRangeFromGRPC(request.GetTimeRange())
+	aggrMethod := entities.AggregationMethodFromGRPC(request.GetAggregation())
+
+	metrics := request.GetMetrics()
+
+	// If no metrics are requested, return all
+	if len(metrics) == 0 {
+		allMetrics, err := m.ListMetrics(request.GetAssets())
+		if err != nil {
+			return nil, err
+		}
+		metrics = allMetrics.GetMetrics()
+	}
+
+	// Create result for this asset or aggreagation of assets, for each metric
+	grpcResults := make(map[string]*grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics, len(metrics))
+	for _, metric := range(metrics) {
+		metricValues, derr := m.metricStorageProvider.QueryMetric(metric, tagSelector, timeRange, aggrMethod)
+		if derr != nil {
+			return nil, derr
+		}
+
+		// Convert the values
+		grpcValues := make([]*grpc_inventory_manager_go.QueryMetricsResult_Value, 0, len(metricValues))
+		for _, value := range(metricValues) {
+			grpcValues = append(grpcValues, value.ToGRPC())
+		}
+
+		grpcResult := &grpc_inventory_manager_go.QueryMetricsResult_AssetMetricValues{
+			Values: grpcValues,
+		}
+
+		// Set the correct asset or aggregation
+		assets := request.GetAssets().GetAssetIds()
+		if len(assets) == 1 {
+			grpcResult.AssetId = assets[0]
+		} else {
+			grpcResult.AssetId = aggrMethod.String()
+		}
+
+		grpcResults[metric] = &grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics{
+			Metrics: []*grpc_inventory_manager_go.QueryMetricsResult_AssetMetricValues{
+				grpcResult,
+			},
+		}
+	}
+
+	result := &grpc_inventory_manager_go.QueryMetricsResult{
+		Metrics: grpcResults,
+	}
+	return result, nil
 }
 // CreateAgentJoinToken generates a JoinToken to allow an agent to join to a controller
 func (m * Manager)CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error){

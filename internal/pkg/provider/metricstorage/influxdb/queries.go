@@ -8,6 +8,8 @@ package influxdb
 
 const (
 	queryShowDatabases = "SHOW DATABASES"
-	queryCreateDatabase = "CREATE DATABASE %s"
+	queryCreateDatabase = "CREATE DATABASE %s" // database name
+
+	queryListMetrics = "SHOW MEASUREMENTS %s" // tags where clause
 )
 

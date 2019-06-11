@@ -7,7 +7,9 @@ package influxdb
 // InfluxDB Metric Storage provider
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
 	influx "github.com/influxdata/influxdb1-client/v2"
 
@@ -79,13 +81,12 @@ func (i *InfluxDBProvider) Connected() bool {
 // any of the entities already exist, unless `ifNeeded` is set.
 func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 	// Check if exists
-	q := influx.NewQuery(queryShowDatabases, "", "")
-	response, err := i.client.Query(q)
+	response, err := i.query(queryShowDatabases)
 	if err != nil {
 		return derrors.NewUnavailableError("unable to get list of databases", err)
 	}
 	found := false
-	for _, db := range(response.Results[0].Series[0].Values) {
+	for _, db := range(getFirstValues(response)) {
 		if db[0] == i.database {
 			found = true
 			break
@@ -99,8 +100,7 @@ func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 		return nil
 	}
 
-	q = influx.NewQuery(fmt.Sprintf(queryCreateDatabase, i.database), "", "")
-	response, err = i.client.Query(q)
+	response, err = i.query(fmt.Sprintf(queryCreateDatabase, i.database))
 	if err != nil {
 		return derrors.NewUnavailableError("unable to create database", err).WithParams(i.database)
 	}
@@ -146,4 +146,136 @@ func (i *InfluxDBProvider) StoreMetricsData(metrics *entities.MetricsData, extra
 	}
 
 	return nil
+}
+
+// List available metrics. If tagSelector is empty, return all available,
+// if tagSelector contains key-value pairs, return metrics available
+// for the union of those tags
+func (i *InfluxDBProvider) ListMetrics(tagSelector entities.TagSelector) ([]string, derrors.Error) {
+	where := whereClause([]string{whereClauseFromTags(tagSelector)})
+	response, err := i.query(fmt.Sprintf(queryListMetrics, where))
+	if err != nil {
+		return nil, derrors.NewUnavailableError("unable to list metrics", err)
+	}
+
+	return getMetrics(response), nil
+}
+
+// Query specific metric. If tagSelector is empty, return all values
+// available, aggregated with aggr. If tagSelector is contains
+// key-value pairs, return values for the union of those tags,
+// aggregated with aggr. If tagSelector contains a single entry,
+// values for that specific tag are returned and aggr is ignored.
+func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error) {
+	// TODO: Pre-process diskio_read, diskio_write
+
+	query, derr := generateQuery(metric, tagSelector, timeRange, aggr)
+	if derr != nil {
+		return nil, derr
+	}
+	log.Debug().Str("query", query).Msg("generated query")
+
+	response, err := i.query(query)
+	if err != nil {
+		log.Error().Err(err).Msg("influxdb query error")
+		return nil, derrors.NewInternalError("error executing influx query", err)
+	}
+
+	return metricValuesFromResponse(response)
+}
+
+func metricValuesFromResponse(response *influx.Response) ([]entities.MetricValue, derrors.Error) {
+	values := getFirstValues(response)
+	result := make([]entities.MetricValue, 0, len(values))
+	for _, v := range(values) {
+		timestamp, derr := timestampFromInterface(v[0])
+		if derr != nil {
+			return nil, derr
+		}
+		value, derr := valueFromInterface(v[1])
+		if derr != nil {
+			return nil, derr
+		}
+		result = append(result, entities.MetricValue{
+			Timestamp: timestamp,
+			Value: value,
+		})
+	}
+
+	return result, nil
+}
+
+func timestampFromInterface(i interface{}) (time.Time, derrors.Error) {
+	tsString, ok := i.(string)
+	if !ok {
+		return time.Time{}, derrors.NewInternalError("error retrieving value").WithParams(i)
+	}
+	timestamp, err := time.Parse(time.RFC3339, tsString)
+	if err != nil {
+		return time.Time{}, derrors.NewInternalError("error parsing timestamp", err).WithParams(tsString)
+	}
+
+	return timestamp, nil
+}
+
+func valueFromInterface(i interface{}) (int64, derrors.Error) {
+	jsonValue, ok := i.(json.Number)
+	if !ok {
+		return 0, derrors.NewInternalError("error retrieving value").WithParams(i)
+	}
+	// First try to get int; if that fails, get float and convert to int
+	value, err := jsonValue.Int64()
+	if err != nil {
+		fvalue, err := jsonValue.Float64()
+		if err != nil {
+			return 0, derrors.NewInternalError("error converting result to int", err).WithParams(jsonValue)
+		}
+		value = int64(fvalue)
+	}
+
+	return value, nil
+}
+
+func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
+	query := influx.NewQuery(q, i.database, "")
+	response, err := i.client.Query(query)
+	if err == nil {
+		err = response.Error()
+	}
+	return response, err
+}
+
+func getFirstValues(response *influx.Response) [][]interface{} {
+	if response == nil || len(response.Results) == 0 {
+		return nil
+	}
+	results := response.Results[0]
+
+	if len(results.Series) == 0 {
+		return nil
+	}
+	return results.Series[0].Values
+}
+
+// Some InfluxDB measurements are exposed as a separate read and write metric,
+// each mapping to the same measurement but a different field.
+var rwMetrics = map[string]bool{
+	"diskio": true,
+	"net": true,
+}
+
+func getMetrics(response *influx.Response) []string {
+	values := getFirstValues(response)
+	list := make([]string, 0, len(values))
+	for _, v := range(values) {
+		strVal := v[0].(string)
+		if rwMetrics[strVal] {
+			list = append(list, strVal + readSuffix)
+			list = append(list, strVal + writeSuffix)
+		} else {
+			list = append(list, strVal)
+		}
+	}
+
+	return list
 }
