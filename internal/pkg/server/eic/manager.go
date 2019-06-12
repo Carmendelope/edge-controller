@@ -9,6 +9,7 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
+	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
@@ -28,9 +29,33 @@ func NewManager(cfg config.Config, assetProvider asset.Provider, metricStoragePr
 	return Manager{cfg, assetProvider, metricStorageProvider}
 }
 
+func (m *Manager) deleteVPNAccount() {
+
+	vpnHelper, err := helper.NewJoinHelper(m.config.JoinTokenPath, m.config.EicApiPort)
+	if err != nil {
+		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error creating helper")
+	}
+
+	err = vpnHelper.DeleteLocalVPN()
+	if err != nil {
+		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error removing vpn account")
+	}
+
+	err  = vpnHelper.RemoveCredentials()
+	if err != nil {
+		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error deleting credentials")
+	}
+
+	// TODO: send a deletevpnUser to vpn-server
+
+}
+
 // Unlink the receiving EIC.
 func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
-	return nil, nil
+
+	go m.deleteVPNAccount()
+
+	return &grpc_common_go.Success{}, nil
 }
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.

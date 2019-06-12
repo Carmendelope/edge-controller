@@ -141,13 +141,12 @@ func (s *Service) Run() error {
 	}
 
 	//If the controller has not done the join yet, it will have to be done
-	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort, s.Configuration.Name,
-		s.Configuration.Labels, s.Configuration.Geolocation)
+	joinHelper, err := helper.NewJoinHelper(s.Configuration.JoinTokenPath, s.Configuration.EicApiPort)
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error creating joinHelper")
 	}
 
-	needJoin, err := joinHelper.NeedJoin(s.Configuration)
+	needJoin, err := joinHelper.NeedJoin()
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error asking for join")
 	}
@@ -155,7 +154,8 @@ func (s *Service) Run() error {
 	log.Info().Bool("need join", needJoin).Msg("Join")
 
 	if needJoin{
-		joinResponse, err = joinHelper.Join()
+		joinResponse, err = joinHelper.Join(s.Configuration.Name, s.Configuration.Labels,
+			s.Configuration.Geolocation)
 		if err != nil {
 			log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error in join")
 		}
@@ -164,7 +164,6 @@ func (s *Service) Run() error {
 		if err != nil {
 			log.Info().Str("error", conversions.ToDerror(err).DebugReport()).Msg("Error saving cedentials")
 		}
-
 
 		// configureDNS
 		err = joinHelper.ConfigureDNS()
@@ -341,7 +340,6 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) err
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal().Errs("failed to serve: %v", []error{err})
 	}
-
 
 	return nil
 }
