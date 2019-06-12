@@ -26,6 +26,7 @@ func NewHandler(manager Manager) *Handler{
 
 // Unlink the receiving EIC.
 func (h *Handler)Unlink(_ context.Context, in *grpc_common_go.Empty) (*grpc_common_go.Success, error) {
+	log.Info().Msg("unlink message received")
 	return h.Manager.Unlink()
 }
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
