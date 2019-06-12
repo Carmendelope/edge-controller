@@ -5,7 +5,6 @@
 package eic
 
 import (
-	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
@@ -56,9 +55,7 @@ func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
 
 	go m.deleteVPNAccount()
 
-	return nil, conversions.ToGRPCError(derrors.NewUnimplementedError("not implemented yet"))
-
-	//return &grpc_common_go.Success{}, nil
+	return &grpc_common_go.Success{}, nil
 }
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.
