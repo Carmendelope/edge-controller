@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nalej/derrors"
-	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/grpc-eic-api-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
@@ -34,7 +33,9 @@ const (
 	accountPasswordSetCmd = "AccountPasswordSet"
 	vpnClientAddress = "localhost"
 	resolvedFile="/etc/systemd/resolved.conf"
-	credentialsFile = "/etc/edge-controller/credentials.json"
+	CredentialsFile = "/etc/edge-controller/credentials.json"
+	accountDisconnect = "AccountDisconnect"
+	accountDelete = "AccountDelete"
 )
 const DefaultTimeout = time.Minute
 
@@ -44,28 +45,18 @@ const AuthHeader = "Authorization"
 type JoinHelper struct {
 	// JoinTokenFile path
 	JoinTokenFile string
-	// OrganizationID with the organization identifier
-	OrganizationId string
-	// Token to be used by the agent.
-	Token string
-	// Cacert with the CA certificate.
-	Cacert string
-	// JoinURL with the URL the EIC needs to send the message for starting the join operation.
-	JoinUrl string
+	// EicToken EICJoinToken (organization_id, edge_controller_id, etc)
+	EicToken grpc_inventory_manager_go.EICJoinToken
 	// JoinPort with the URL the EIC needs to send the message for starting the join operation.
 	JoinPort int
-	// Name with the edge controller name
-	Name string
-	// labels with the edge controller labels
-	Labels map[string]string
-	DnsUrl string
-	// Geolocation with the EC geolocation
-	Geolocation string
 }
 
-func NewJoinHelper (configFile string, port int, name string, labels string, geolocation string ) (*JoinHelper, error) {
+// NewJoinHelper returns a JoinHelper to manage all the join and credentials actions
+func NewJoinHelper (configFile string, port int) (*JoinHelper, error) {
 
-	jsonFile, err :=  os.Open(configFile)
+	var eicToken grpc_inventory_manager_go.EICJoinToken
+
+	jsonFile, err := os.Open(configFile)
 	if err != nil {
 		return nil, err
 	}
@@ -73,30 +64,41 @@ func NewJoinHelper (configFile string, port int, name string, labels string, geo
 	defer jsonFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
-	var eicToken grpc_inventory_manager_go.EICJoinToken
+
 	err = json.Unmarshal(byteValue, &eicToken)
 	if err != nil {
 		log.Error().Str("err", conversions.ToDerror(err).DebugReport()).Msg("error Unmarshalling joinTokenFile")
 		return nil, err
 	}
 
-	joinLabels, err := getLabels(labels)
-	if err != nil {
-		log.Error().Str("err", conversions.ToDerror(err).DebugReport()).Msg("error getting labels")
-		return nil, err
+	return &JoinHelper{
+		JoinTokenFile: configFile,
+		EicToken: eicToken,
+		JoinPort: port,
+	}, nil
+}
+
+func (j * JoinHelper) LoadTokenFile () derrors.Error{
+
+	if j.JoinTokenFile == "" {
+		return derrors.NewFailedPreconditionError("no join file found")
 	}
 
-	return &JoinHelper{
-		JoinPort: port,
-		Name: name,
-		OrganizationId:eicToken.OrganizationId,
-		Token: eicToken.Token,
-		Cacert: eicToken.Cacert,
-		JoinUrl: eicToken.JoinUrl,
-		Labels: joinLabels,
-		Geolocation: geolocation,
-		DnsUrl: eicToken.DnsUrl,
-	}, nil
+	jsonFile, err :=  os.Open(j.JoinTokenFile)
+	if err != nil {
+		return conversions.ToDerror(err)
+	}
+	log.Debug().Str("tokenFile", j.JoinTokenFile).Msg("Successfully Opened")
+	defer jsonFile.Close()
+
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	err = json.Unmarshal(byteValue, &j.EicToken)
+	if err != nil {
+		log.Error().Str("err", conversions.ToDerror(err).DebugReport()).Msg("error Unmarshalling joinTokenFile")
+		return conversions.ToDerror(err)
+	}
+
+	return  nil
 }
 
 // getLabels convert labelsStr (param1=value1,...,paramN=valueN) to a map
@@ -122,8 +124,8 @@ func getLabels (labelsStr string) (map[string]string, derrors.Error) {
 }
 
 // NeedJoin returns true if the EIC needs to send the join message
-func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
-	_, err := os.Stat(credentialsFile)
+func (j * JoinHelper) NeedJoin () (bool, error) {
+	_, err := os.Stat(CredentialsFile)
 	if os.IsNotExist(err) {
 		return true, nil
 	}
@@ -135,7 +137,7 @@ func (j * JoinHelper) NeedJoin (config  config.Config) (bool, error) {
 }
 
 // Join calls eic-api to join de EIC
-func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error){
+func (j * JoinHelper) Join (name string, labels string, geolocation string) (*grpc_inventory_manager_go.EICJoinResponse, error){
 	log.Info().Msg("Join edge controller")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
@@ -154,11 +156,17 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error
 		return nil, ipErr
 	}
 
+	joinLabels, err := getLabels(labels)
+	if err != nil {
+		log.Error().Str("err", conversions.ToDerror(err).DebugReport()).Msg("error getting labels")
+		return nil, err
+	}
+
 	joinResponse, joinErr := client.Join(ctx, &grpc_inventory_manager_go.EICJoinRequest{
-		OrganizationId: j.OrganizationId,
-		Name: j.Name,
-		Labels: j.Labels,
-		Geolocation: j.Geolocation,
+		OrganizationId: j.EicToken.OrganizationId,
+		Name: name,
+		Labels:joinLabels,
+		Geolocation: geolocation,
 		Ips: ips,
 	})
 	if joinErr != nil {
@@ -175,7 +183,7 @@ func (j * JoinHelper) Join () (*grpc_inventory_manager_go.EICJoinResponse, error
 func (j * JoinHelper) ConfigureDNS () error {
 	log.Info().Msg("Configuring DNS")
 
-	ips, err := net.LookupHost(j.DnsUrl)
+	ips, err := net.LookupHost(j.EicToken.DnsUrl)
 	if err != nil {
 		return err
 	}
@@ -230,10 +238,7 @@ func (j * JoinHelper) GetIP () error{
 			return err
 		}
 	}
-
 	return j.ExecuteDhClient()
-	//return nil
-
 }
 
 // ConfigureLocalVPN connects to VPN server the user indicated in credentials and executes dhclient to get IP
@@ -278,8 +283,40 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 	return nil
 }
 
+// DeleteLocalVPN disconnect the account and delete it
+func (j * JoinHelper) DeleteLocalVPN () error {
+
+	credentials, err := j.LoadCredentials()
+	if err != nil {
+		return err
+	}
+
+	// Disconnect
+	cmd := exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, accountDisconnect, credentials.Credentials.Username)
+	err = cmd.Run()
+	if err != nil {
+		log.Info().Str("error", err.Error()).Msg("error disconnecting account")
+	}
+
+	// AccountDelete
+	cmd = exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, accountDelete, credentials.Credentials.Username)
+	err = cmd.Run()
+	if err != nil {
+		log.Info().Str("error", err.Error()).Msg("error deleting account")
+	}
+
+	// RemoveCredentialsFile
+	err = j.RemoveCredentials()
+	if err != nil {
+		log.Info().Str("error", err.Error()).Msg("error deleting credentials file")
+	}
+
+
+	return nil
+}
+
 func (j * JoinHelper) getContext(timeout ...time.Duration) (context.Context, context.CancelFunc) {
-	md := metadata.New(map[string]string{AuthHeader: fmt.Sprintf("%s#%s", j.Token, j.OrganizationId)})
+	md := metadata.New(map[string]string{AuthHeader: fmt.Sprintf("%s#%s", j.EicToken.Token, j.EicToken.OrganizationId)})
 	log.Debug().Interface("md", md).Msg("metadata has been created")
 	if len(timeout) == 0 {
 		baseContext, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -294,7 +331,8 @@ func (j * JoinHelper) getSecureConnection() (*grpc.ClientConn, derrors.Error) {
 
 	var creds credentials.TransportCredentials
 	rootCAs := x509.NewCertPool()
-	caCert:= []byte(j.Cacert)
+	//caCert:= []byte(j.Cacert)
+	caCert:= []byte(j.EicToken.Cacert)
 
 	added := rootCAs.AppendCertsFromPEM(caCert)
 	if !added {
@@ -304,7 +342,8 @@ func (j * JoinHelper) getSecureConnection() (*grpc.ClientConn, derrors.Error) {
 	creds = credentials.NewClientTLSFromCert(rootCAs, "")
 	log.Debug().Interface("creds", creds.Info()).Msg("Secure credentials")
 
-	targetAddress := fmt.Sprintf("%s:%d", j.JoinUrl, j.JoinPort)
+	//targetAddress := fmt.Sprintf("%s:%d", j.JoinUrl, j.JoinPort)
+	targetAddress := fmt.Sprintf("%s:%d", j.EicToken.JoinUrl, j.JoinPort)
 	log.Info().Str("address", targetAddress).Msg("creating connection")
 
 	sConn, dErr := grpc.Dial(targetAddress, grpc.WithTransportCredentials(creds))
@@ -313,22 +352,23 @@ func (j * JoinHelper) getSecureConnection() (*grpc.ClientConn, derrors.Error) {
 	}
 	return sConn, nil
 }
-
+// SaveCredentials save VPN credentials in a file
 func (j * JoinHelper) SaveCredentials(edge grpc_inventory_manager_go.EICJoinResponse) error {
 
 	log.Info().Msg("saving credentials")
 
 	edgeJson, _ := json.Marshal(edge)
-	err := ioutil.WriteFile(credentialsFile, edgeJson, 0644)
+	err := ioutil.WriteFile(CredentialsFile, edgeJson, 0644)
 
 	return err
 }
 
+// LoadCredentials load vpn credentials from a file
 func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResponse, error) {
 
 	log.Info().Msg("loading credentials")
 
-	credentialsFile, err := ioutil.ReadFile(credentialsFile)
+	credentialsFile, err := ioutil.ReadFile(CredentialsFile)
 	if err != nil {
 		return nil, err
 	}
@@ -341,6 +381,17 @@ func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResp
 	}
 
 	return credentials, nil
+}
+
+// RemoveCredentials removes credentials file
+func (j *JoinHelper) RemoveCredentials() error {
+	remCmd := fmt.Sprintf("rm %s", CredentialsFile)
+	cmd := exec.Command("/bin/sh", "-c", remCmd)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // getAllIPs return a list of IPs where edge-controller accepts connections (except VPN Address)
