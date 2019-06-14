@@ -69,7 +69,6 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 
 
 	// add Token
-	//m.provider.AddJoinToken(response.Token)
 	log.Debug().Str("agentID", request.AgentId).Str("assetID", response.AssetId).Msg("Agent joined successfully")
 	return response, nil
 

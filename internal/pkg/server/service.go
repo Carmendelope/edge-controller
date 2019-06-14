@@ -305,11 +305,6 @@ func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients, not
 		log.Fatal().Errs("failed to listen: %v", []error{err})
 	}
 
-/*
-	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient,
-		s.Configuration.OrganizationId, s.Configuration.EdgeControllerId)
-	go notifier.LaunchNotifierLoop()
-*/
 	agentManager := agent.NewManager(s.Configuration, providers.assetProvider, *notifier, clients.inventoryProxyClient)
 	agentHandler := agent.NewHandler(agentManager)
 
