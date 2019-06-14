@@ -6,6 +6,7 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/grpc-edge-inventory-proxy-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
@@ -33,6 +34,10 @@ type Notifier struct {
 	organizationID string
 	// edgeControllerID with de EIC identifier
 	edgeControllerID string
+	//AssetUninstall is a map of asset identifiers whose are pending to be uninstalled
+	assetUninstall map[string]entities.FullAssetId
+	// AssetUninstalled is a map of asset identifiers whose are uninstalled and they are pending to be sent to management cluster
+	assetUninstalled map[string] entities.FullAssetId
 }
 
 func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient,
@@ -46,6 +51,8 @@ func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient
 		mngtClient: mngtClient,
 		organizationID: organizationID,
 		edgeControllerID: edgeControllerID,
+		assetUninstall: make (map[string]entities.FullAssetId,0),
+		assetUninstalled: make (map[string]entities.FullAssetId,0),
 	}
 }
 
@@ -99,9 +106,6 @@ func (n * Notifier) sendAliveMessages() bool{
 // sendPendingResponses send the results of the last operations to the management cluster
 // if an error occurs, the response is stored again in pending responses
 func (n *Notifier) sendPendingResponses() {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer cancel()
-
 	// get pending responses from database.
 	pendingRes, err := n.provider.GetPendingOpResponses(true)
 	if err != nil {
@@ -110,7 +114,11 @@ func (n *Notifier) sendPendingResponses() {
 	}
 
 	for _, res := range pendingRes {
+
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 		_, err := n.mngtClient.CallbackAgentOperation(ctx, res.ToGRPC())
+		cancel()
+
 		if err != nil {
 			log.Warn().Str("assetID", res.AssetId).Str("operation_id", res.OperationId).Str("error", conversions.ToDerror(err).DebugReport()).
 				Msg("error sending agent response")
@@ -122,6 +130,24 @@ func (n *Notifier) sendPendingResponses() {
 		}
 	}
 
+}
+
+func (n *Notifier) sendPendingUninstallMessages() bool {
+
+	for _, msg := range n.assetUninstalled {
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+
+		_, err := n.mngtClient.AgentUninstalled(ctx, &grpc_inventory_go.AssetUninstalledId{
+			OrganizationId: msg.OrganizationId,
+			AssetId: msg.AssetId,
+		})
+		cancel()
+		if err != nil {
+			log.Warn().Str("trace", conversions.ToDerror(err).DebugReport()).Msg("cannot send agent uninstalled messages to management cluster")
+			return false
+		}
+	}
+	return true
 }
 
 // notifyManagementCluster compiles the list of notifications to be sent to the management cluster regarding assets
@@ -142,6 +168,13 @@ func (n *Notifier) notifyManagementCluster() {
 		}
 	}
 	n.sendPendingResponses()
+
+	// send installed message to management cluster
+	if n.sendPendingUninstallMessages(){
+		for k := range n.assetUninstalled {
+			delete(n.assetUninstalled, k)
+		}
+	}
 }
 
 func (n * Notifier) NotifyAgentStart(start * grpc_inventory_manager_go.AgentStartInfo) derrors.Error{
@@ -164,4 +197,46 @@ func (n * Notifier) NotifyCallback(response * grpc_inventory_manager_go.AgentOpR
 	}
 	// TODO Implement send or queue
 	return nil
+}
+
+func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId) derrors.Error {
+
+	n.Lock()
+	defer n.Unlock()
+
+	// add the assetID in AssetUninstall map
+	n.assetUninstall[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+
+	// remove all the entries
+	delete (n.assetAlive, assetID.AssetId)
+	delete (n.AssetIP,  assetID.AssetId)
+	delete (n.AssetNewIP,  assetID.AssetId)
+
+	return nil
+}
+
+// PendingInstall check if a message has been sent to uninstall this agent
+func (n *Notifier) PendingInstall(assetId string) (bool, entities.FullAssetId) {
+	n.Lock()
+	defer n.Unlock()
+
+	asset, exists := n.assetUninstall[assetId]
+
+	return exists, asset
+}
+
+// RemovePendingUninstall move a asset from assetUninstall to assetUninstalled
+func (n *Notifier) RemovePendingUninstall (assetId string) {
+
+	n.Lock()
+	defer n.Unlock()
+
+	asset, exists := n.assetUninstall[assetId]
+	if exists{
+		delete (n.assetUninstall, assetId)
+		n.assetUninstalled[assetId] = asset
+	}else{
+		log.Warn().Str("assetID", assetId).Msg("not found in assetUninstall map")
+	}
+
 }

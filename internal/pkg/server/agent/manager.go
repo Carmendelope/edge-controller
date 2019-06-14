@@ -16,10 +16,13 @@ import (
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
+	"github.com/satori/go.uuid"
 	"time"
 )
 
 const DefaultTimeout = 30 * time.Second
+const UninstallOp = "uninstall"
+const CorePluging = "core"
 
 type Manager struct{
 	config config.Config
@@ -66,7 +69,7 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 
 
 	// add Token
-	m.provider.AddJoinToken(response.Token)
+	//m.provider.AddJoinToken(response.Token)
 	log.Debug().Str("agentID", request.AgentId).Str("assetID", response.AssetId).Msg("Agent joined successfully")
 	return response, nil
 
@@ -85,12 +88,27 @@ func (m * Manager) AgentStart(info *grpc_inventory_manager_go.AgentStartInfo) de
 
 func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest, ip string) (*grpc_edge_controller_go.CheckResult, derrors.Error) {
 	// TODO: Verify clock sync
-
 	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
+
+	exists, asset := m.notifier.PendingInstall(request.AssetId)
+	// verify if this agent is pending to be uninstalled
+	if exists{
+
+		err := m.provider.RemoveManagedAsset(request.AssetId)
+		if err != nil {
+			log.Warn().Str("assetID", request.AssetId).Str("trace", err.DebugReport()).Msg("error removing agent")
+		}
+
+		m.notifier.RemovePendingUninstall(request.AssetId)
+		// TODO: send agent uninstalled to EC-PROXY
+
+		return m.SendUninstallMessageToAgent(asset)
+	}
+
 	m.notifier.AgentAlive(request.AssetId, ip)
 
 	// Handle plugin data
-	for _, data := range(request.GetPluginData()) {
+	for _, data := range (request.GetPluginData()) {
 		derr := edgeplugin.HandleAgentData(request.GetAssetId(), data)
 		// TODO: Think about failure modes - do we want to collect
 		// errors and handle what we can, handle nothing if there is
@@ -102,25 +120,27 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 	}
 
 	pending, err := m.provider.GetPendingOperations(request.AssetId, true)
-	if err != nil{
+	if err != nil {
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent")
 		// In this case the error is not returned to the agent as it cannot do anything.
 		return &grpc_edge_controller_go.CheckResult{}, nil
 	}
-	log.Info().Str("assetID", request.AssetId).Int("pending operation", len (pending)).Msg("sending pending operation to the agent")
+	log.Info().Str("assetID", request.AssetId).Int("pending operation", len(pending)).Msg("sending pending operation to the agent")
 
 	// Return empty message
-	if len(pending) == 0{
+	if len(pending) == 0 {
 		return &grpc_edge_controller_go.CheckResult{}, nil
 	}
 	// Transform the result into gRPC structures.
 	result := make([]*grpc_inventory_manager_go.AgentOpRequest, 0, len(pending))
-	for _ , p := range pending{
+	for _, p := range pending {
 		result = append(result, p.ToGRPC())
 	}
 	return &grpc_edge_controller_go.CheckResult{
-		PendingRequests:      result,
+		PendingRequests: result,
 	}, nil
+
+
 }
 
 func (m * Manager) CallbackAgentOperation(response *grpc_inventory_manager_go.AgentOpResponse) derrors.Error {
@@ -131,4 +151,30 @@ func (m * Manager) CallbackAgentOperation(response *grpc_inventory_manager_go.Ag
 		return err
 	}
 	return nil
+}
+
+// removes all the agent information (edge-controller -> agent and agent -> token)
+func (m *Manager) RemoveAgent(request entities.FullAssetId) derrors.Error{
+
+	err := m.provider.RemoveManagedAsset(request.AssetId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SendUninstallMessageToAgent operation to send a message to an agent to inform it is going to be uninstalled
+func (m *Manager) SendUninstallMessageToAgent (request entities.FullAssetId) (*grpc_edge_controller_go.CheckResult, derrors.Error){
+
+	result := []*grpc_inventory_manager_go.AgentOpRequest{{
+		OrganizationId: request.OrganizationId,
+		EdgeControllerId: request.EdgeControllerId,
+		AssetId: request.AssetId,
+		OperationId: uuid.NewV4().String(),
+		Operation: UninstallOp,
+		Plugin: CorePluging,
+	}}
+	return &grpc_edge_controller_go.CheckResult{
+		PendingRequests: result,
+	}, nil
 }

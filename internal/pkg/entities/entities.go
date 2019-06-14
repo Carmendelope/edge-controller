@@ -21,6 +21,8 @@ type AgentOpRequest struct {
 	EdgeControllerId string `json:"edge_controller_id,omitempty"`
 	// AssetId with the asset identifier.
 	AssetId string `json:"asset_id,omitempty"`
+	// OperationId with the operation identifier.
+	OperationId string `json:"operation_id,omitempty"`
 	// Operation to be performed. No enum is used as to no constraint agent evolution.
 	Operation string `json:"operation,omitempty"`
 	// Plugin in charge of executing such operation.
@@ -35,6 +37,7 @@ func NewAgentOpRequestFromGRPC(request * grpc_inventory_manager_go.AgentOpReques
 		OrganizationId:   request.OrganizationId,
 		EdgeControllerId: request.EdgeControllerId,
 		AssetId:          request.AssetId,
+		OperationId:      request.OperationId,
 		Operation:        request.Operation,
 		Plugin:           request.Plugin,
 		Params:           request.Params,
@@ -49,7 +52,7 @@ func (aor * AgentOpRequest) ToGRPC() *grpc_inventory_manager_go.AgentOpRequest{
 		Operation:            aor.Operation,
 		Plugin:               aor.Plugin,
 		Params:               aor.Params,
-		OperationId:          aor.OrganizationId,
+		OperationId:          aor.OperationId,
 	}
 }
 
@@ -259,5 +262,46 @@ func ValidAgentOpRequest (request *grpc_inventory_manager_go.AgentOpRequest) der
 	if request.Plugin == "" {
 		return derrors.NewInvalidArgumentError("plugin cannot be empty")
 	}
+	return nil
+}
+
+// FullAssetId
+type FullAssetId struct {
+	// OrganizationId with the organization identifier.
+	OrganizationId string `json:"organization_id,omitempty"`
+	// EdgeControllerId with the EIC identifier.
+	EdgeControllerId string `json:"edge_controller_id,omitempty"`
+	// AssetId with the asset identifier.
+	AssetId              string   `json:"asset_id,omitempty"`
+}
+
+func NewFullAssetIdFromGRPC(assetID * grpc_inventory_manager_go.FullAssetId) * FullAssetId{
+	return &FullAssetId{
+		OrganizationId:   assetID.OrganizationId,
+		EdgeControllerId: assetID.EdgeControllerId,
+		AssetId:          assetID.AssetId,
+	}
+}
+
+func (fa * FullAssetId) ToGRPC() * grpc_inventory_manager_go.FullAssetId{
+	return &grpc_inventory_manager_go.FullAssetId{
+		OrganizationId:       fa.OrganizationId,
+		EdgeControllerId:     fa.EdgeControllerId,
+		AssetId:              fa.AssetId,
+
+	}
+}
+
+func ValidFullAssetID (request *grpc_inventory_manager_go.FullAssetId) derrors.Error {
+	if request.OrganizationId == "" {
+		return derrors.NewInvalidArgumentError("organization_id cannot be empty")
+	}
+	if request.EdgeControllerId == "" {
+		return derrors.NewInvalidArgumentError("edge_controller_id cannot be empty")
+	}
+	if request.AssetId == "" {
+		return derrors.NewInvalidArgumentError("asset_id cannot be empty")
+	}
+
 	return nil
 }

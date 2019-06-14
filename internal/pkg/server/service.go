@@ -229,9 +229,14 @@ func (s *Service) Run() error {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error starting EIC")
 	}
 
-	go s.LaunchEICServer(providers, clients)
+	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient,
+		s.Configuration.OrganizationId, s.Configuration.EdgeControllerId)
+	go notifier.LaunchNotifierLoop()
 
-	return s.LaunchAgentServer(providers, clients)
+
+	go s.LaunchEICServer(providers, clients, notifier)
+
+	return s.LaunchAgentServer(providers, clients, notifier)
 }
 
 func (s *Service) sendAliveMessage()  {
@@ -268,14 +273,14 @@ func (s*Service) aliveLoop() {
 	}
 }
 
-func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error{
+func (s*Service) LaunchEICServer(providers * Providers, clients * Clients, notifier *agent.Notifier) error{
 
 	EICLis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.Port))
 	if err != nil {
 		log.Fatal().Errs("failed to listen: %v", []error{err})
 	}
 
-	eicManager := eic.NewManager(s.Configuration, providers.assetProvider, providers.metricStorageProvider)
+	eicManager := eic.NewManager(s.Configuration, providers.assetProvider, providers.metricStorageProvider, notifier)
 	eicHandler := eic.NewHandler(eicManager)
 
 	grpcEICServer := grpc.NewServer()
@@ -294,17 +299,17 @@ func (s*Service) LaunchEICServer(providers * Providers, clients * Clients) error
 	return nil
 }
 
-func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients) error{
+func (s*Service) LaunchAgentServer(providers * Providers, clients * Clients, notifier *agent.Notifier) error{
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Configuration.AgentPort))
 	if err != nil {
 		log.Fatal().Errs("failed to listen: %v", []error{err})
 	}
 
-
+/*
 	notifier := agent.NewNotifier(s.Configuration.NotifyPeriod, providers.assetProvider, clients.inventoryProxyClient,
 		s.Configuration.OrganizationId, s.Configuration.EdgeControllerId)
 	go notifier.LaunchNotifierLoop()
-
+*/
 	agentManager := agent.NewManager(s.Configuration, providers.assetProvider, *notifier, clients.inventoryProxyClient)
 	agentHandler := agent.NewHandler(agentManager)
 
