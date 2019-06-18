@@ -78,3 +78,15 @@ func (h *Handler)CreateAgentJoinToken(_ context.Context, edgeControllerID *grpc_
 	return h.Manager.CreateAgentJoinToken(edgeControllerID)
 
 }
+
+// UninstallAgent operation to uninstall an agent
+func (h *Handler) UninstallAgent(_ context.Context, assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
+	log.Info().Interface("edgeControllerID", assetID.EdgeControllerId).Str("assetID", assetID.AssetId).Msg("uninstall agent")
+
+	vErr := entities.ValidFullAssetID(assetID)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+
+	return h.Manager.UninstallAgent(assetID)
+}
