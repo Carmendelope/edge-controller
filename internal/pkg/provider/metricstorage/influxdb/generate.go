@@ -22,8 +22,9 @@ const (
 )
 
 var fromOverrides = map[string]string{
-	// Calculate millicores used
-	"cpu": "(SELECT round((1-time_idle/(time_user+time_system+time_nice+time_iowait+time_irq+time_softirq+time_steal+time_idle))*1000) AS usage, asset_id, cpu FROM cpu)",
+	// Calculate millicores used as the ratio of difference in idle
+	// ticks and differenc in total ticks
+	"cpu": "(SELECT round((1-difference_time_idle/(difference_time_user+difference_time_system+difference_time_nice+difference_time_iowait+difference_time_irq+difference_time_softirq+difference_time_steal+difference_time_idle))*1000) AS usage FROM (SELECT difference(*) FROM cpu))",
 	"diskio_read": "diskio",
 	"diskio_write": "diskio",
 	"net_read": "net",
