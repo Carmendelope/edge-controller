@@ -19,6 +19,28 @@
     ],
     "provisioners": [
         {
+            "type": "shell",
+            "inline_shebang": "/bin/bash",
+            "inline": [
+                "mkdir -p /tmp/agents/{linux_amd64,windows_amd64,darwin_amd64}"
+            ]
+        },
+        {
+            "type": "file",
+            "source": "../service-net-agent/bin/linux_amd64",
+            "destination": "/tmp/agents/linux_amd64"
+        },
+        {
+            "type": "file",
+            "source": "../service-net-agent/bin/windows_amd64",
+            "destination": "/tmp/agents/windows_amd64"
+        },
+        {
+            "type": "file",
+            "source": "../service-net-agent/bin/darwin_amd64",
+            "destination": "/tmp/agents/darwin_amd64"
+        },
+        {
             "type": "file",
             "source": "bin/linux_amd64/edge-controller",
             "destination": "/tmp/edge-controller"

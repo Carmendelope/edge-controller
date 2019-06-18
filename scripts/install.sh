@@ -6,6 +6,10 @@ VAGRANT_INIT_PATH=/vagrant/init
 INIT_PATH="${INIT_PATH:-$VAGRANT_INIT_PATH}"
 EDGE_CONTROLLER_SERVICE="${EDGE_CONTROLLER_SERVICE:-edge-controller.vagrant.service}"
 
+# Agent binaries
+cp -R /tmp/agents /opt
+rm -rf /tmp/agents
+
 # Dependencies installation
 apt-get update
 apt-get install -y build-essential wget
