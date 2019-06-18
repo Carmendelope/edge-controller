@@ -59,14 +59,21 @@ var derivativeMetric = map[string]bool{
 
 // If we need more flexibility than the queries this function can generate,
 // we probably want to create something similar to a query tree
+// Also, I _just_ found out about Flux, which might be a much more suitable
+// query language for our purpose...
 func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) (string, derrors.Error) {
+	// If we want a single point in time, we set resolution to 1s to not
+	// miss anything, and later limit to a single value
+	if !timeRange.Timestamp.IsZero() {
+		timeRange.Resolution = time.Second
+	}
+
 	// Determine what to select from. Mostly just a measurement,
 	// but sometimes (e.g., for CPU), we do some pre-processing
 	from, found := fromOverrides[metric]
 	if !found {
 		from = metric
 	}
-	fromClause := fmt.Sprintf("FROM %s", from)
 
 	// Add restrictions in time and asset_id
 	whereClause := whereClause([]string{
@@ -80,21 +87,20 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 		return "", derrors.NewInvalidArgumentError("unsupported metric").WithParams(metric)
 	}
 
-	// First iteration of complete select
+	// For throughput metrics (x per sec) we need a derivative
+	innerFunc := "mean"
+	if derivativeMetric[metric] {
+		metricValue = fmt.Sprintf("%s(%s),1s", innerFunc, metricValue)
+		innerFunc = "derivative"
+	}
+
+	// First complete select with where clause
 	selector := "metric"
-	selectClause := fmt.Sprintf("%s %s %s",
-		// As we either interpolate or aggregate over time, we add a
-		// "mean" here.
-		selectFromFuncFieldAs("mean", metricValue, selector),
-		fromClause,
+	selectClause := fmt.Sprintf("%s FROM %s %s",
+		selectFromFuncFieldAs(innerFunc, metricValue, selector),
+		from,
 		whereClause,
 	)
-
-	// If we want a single point in time, we set resolution to 1s to not
-	// miss anything, and later limit to a single value
-	if !timeRange.Timestamp.IsZero() {
-		timeRange.Resolution = time.Second
-	}
 
 	// Add inner summation if needed (e.g., all CPUs, all disks per asset)
 	sumTag, found := sumTags[metric]
@@ -117,16 +123,6 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 			selectFromFuncFieldAs(aggr.String(), selector, newSelector),
 			selectClause,
 			groupByClause(timeRange.Resolution),
-		)
-		selector = newSelector
-	}
-
-	// For throughput metrics (x per sec) we need a derivative
-	if derivativeMetric[metric] {
-		newSelector := "derv_metric"
-		selectClause = fmt.Sprintf("%s FROM (%s)",
-			selectFromFuncFieldAs("derivative", selector, newSelector),
-			selectClause,
 		)
 		selector = newSelector
 	}
