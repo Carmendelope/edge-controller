@@ -99,8 +99,8 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 		}
 
 		m.notifier.RemovePendingUninstall(request.AssetId)
-		// TODO: send agent uninstalled to EC-PROXY
 
+		// TODO: proccess the information received
 		return m.SendUninstallMessageToAgent(asset)
 	}
 
