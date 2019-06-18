@@ -183,9 +183,19 @@ func whereClauseFromTime(timeRange *entities.TimeRange) string {
 	}
 
 	clauses := make([]string, 0, 2)
+
+	// We always add a start time, even if it's 0. This is to work around
+	// an apparent bug in InfluxDB's difference() that doesn't seem to
+	// return any results without a "time >" clause.
+	var startUnix int64 = 0
 	if !start.IsZero() {
-		clauses = append(clauses, fmt.Sprintf("time >= %d", start.UnixNano()))
+		// We only want to set a valid epoch-based timestamp to avoid
+		// a real big negative number in the query to represent year
+		// zero.
+		startUnix = start.UnixNano()
 	}
+	clauses = append(clauses, fmt.Sprintf("time >= %d", startUnix))
+
 	if !end.IsZero() {
 		clauses = append(clauses, fmt.Sprintf("time <= %d", end.UnixNano()))
 	}
