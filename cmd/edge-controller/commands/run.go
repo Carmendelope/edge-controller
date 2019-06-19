@@ -33,7 +33,7 @@ var runCmd = &cobra.Command{
 	Long:  `Launch the Edge Controller API`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SetupLogging()
-		err := ReadConfiFile()
+		err := ReadConfigFile()
 		if err != nil{
 			log.Fatal().Str("error", err.DebugReport()).Msg("error reading configFile")
 		}
@@ -85,9 +85,9 @@ func init() {
 	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)
 }
 
-// ReadConfiFile reads config in /vagrant/config.yaml per default and
+// ReadConfigFile reads config in /vagrant/config.yaml per default and
 //  fills the config values with the values viper has
-func ReadConfiFile() derrors.Error{
+func ReadConfigFile() derrors.Error{
 	log.Info().Str("configFile", configFile).Msg("reading config file")
 
 	// Check if file exists.
