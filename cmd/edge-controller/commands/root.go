@@ -5,12 +5,11 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/nalej/edge-controller/version"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-
-	"fmt"
 	"os"
 )
 
