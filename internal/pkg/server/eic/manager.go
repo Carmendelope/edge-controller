@@ -8,6 +8,7 @@ import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
+	"github.com/nalej/edge-controller/internal/pkg/server/agent"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
 	"github.com/nalej/edge-controller/internal/pkg/server/helper"
 	"github.com/nalej/grpc-common-go"
@@ -16,17 +17,22 @@ import (
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"github.com/satori/go.uuid"
+	"time"
 )
+
+const CanceledReponseInfo = "Canceled by the System. Agent Uninstalled"
 
 type Manager struct{
 	config config.Config
 	provider asset.Provider
 
 	metricStorageProvider metricstorage.Provider
+
+	notifier *agent.Notifier
 }
 
-func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider) Manager{
-	return Manager{cfg, assetProvider, metricStorageProvider}
+func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider, notifier *agent.Notifier) Manager{
+	return Manager{cfg, assetProvider, metricStorageProvider, notifier}
 }
 
 func (m *Manager) deleteVPNAccount() {
@@ -57,6 +63,7 @@ func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
 
 	return &grpc_common_go.Success{}, nil
 }
+
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.
 func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
@@ -81,11 +88,13 @@ func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.Agent
 		Info: "",
 	}, nil
 }
+
 // Configure changes specific configuration options of the Edge Controller
 // and/or Edge Controller plugins
 func (m * Manager)Configure(request *grpc_inventory_manager_go.ConfigureEICRequest) (*grpc_common_go.Success, error) {
 	return nil, nil
 }
+
 // ListMetrics returns available metrics for a certain selection of assets
 func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
 	// TODO: Potentially check if the Organization ID and Edge
@@ -102,6 +111,7 @@ func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector)
 
 	return metricsList, nil
 }
+
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller
 func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error){
@@ -158,6 +168,7 @@ func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 	}
 	return result, nil
 }
+
 // CreateAgentJoinToken generates a JoinToken to allow an agent to join to a controller
 func (m * Manager)CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error){
 	token := uuid.NewV4().String()
@@ -176,4 +187,40 @@ func (m * Manager)CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeC
 		ExpiresOn: tokenInfo.ExpiredOn,
 	}, nil
 
+}
+
+// UninstallAgent operation to uninstall an agent
+func (m *Manager) UninstallAgent( assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
+
+	// send the message to the notifier
+	m.notifier.UninstallAgent(assetID)
+
+
+	//  remove pending operations and send them as cancelled to the IM.
+
+	pending, err := m.provider.GetPendingOperations(assetID.AssetId, true)
+	if err != nil{
+		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent uninstalling agent")
+		// In this case the error is not returned to the agent as it cannot do anything.
+		return nil, nil
+	}
+
+	for _, operation := range pending {
+		err = m.provider.AddOpResponse(entities.AgentOpResponse{
+			Created: time.Now().Unix(),
+			OrganizationId: assetID.OrganizationId,
+			EdgeControllerId: assetID.EdgeControllerId,
+			AssetId: assetID.AssetId,
+			OperationId: operation.OperationId,
+			Timestamp: time.Now().Unix(),
+			Status: grpc_inventory_manager_go.AgentOpStatus_CANCELED.String(),
+			Info: CanceledReponseInfo,
+		})
+		if err != nil {
+			log.Error().Str("trace", err.DebugReport()).Str("edge_controller_id", operation.EdgeControllerId).
+			 Str("asset_id", operation.AssetId).Str("operation_id", operation.OperationId).Msg("cannot add canceled operation")
+		}
+	}
+
+	return &grpc_common_go.Success{}, nil
 }

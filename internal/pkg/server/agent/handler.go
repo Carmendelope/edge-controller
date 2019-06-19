@@ -53,6 +53,7 @@ func (h *Handler) AgentStart(ctx context.Context, info *grpc_inventory_manager_g
 }
 
 func (h *Handler) AgentCheck(ctx context.Context, request *grpc_edge_controller_go.AgentCheckRequest) (*grpc_edge_controller_go.CheckResult, error) {
+
 	err := entities.ValidAgentCheckRequest(request)
 	if err != nil{
 		return nil, conversions.ToGRPCError(err)

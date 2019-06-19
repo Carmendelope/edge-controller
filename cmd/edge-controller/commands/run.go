@@ -5,12 +5,14 @@
 package commands
 
 import (
+	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/server"
 	"github.com/nalej/edge-controller/internal/pkg/server/config"
-	plugin "github.com/nalej/infra-net-plugin"
+	"github.com/nalej/infra-net-plugin"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
 	"time"
 )
 
@@ -21,6 +23,9 @@ const DefaultAlivePeriod = "5m"
 var cfg = config.Config{
 	PluginConfig: viper.New(),
 }
+var configFile string
+var configHelper *viper.Viper
+
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -28,6 +33,10 @@ var runCmd = &cobra.Command{
 	Long:  `Launch the Edge Controller API`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SetupLogging()
+		err := ReadConfigFile()
+		if err != nil{
+			log.Fatal().Str("error", err.DebugReport()).Msg("error reading configFile")
+		}
 		log.Info().Msg("Launching API!")
 		cfg.Debug = debugLevel
 		server := server.NewService(cfg)
@@ -35,12 +44,17 @@ var runCmd = &cobra.Command{
 	},
 }
 
+
 func init() {
+
+	configHelper = viper.New()
 
 	d, _ := time.ParseDuration(DefaultNotificationPeriod)
 	a, _ := time.ParseDuration(DefaultAlivePeriod)
 
 	rootCmd.AddCommand(runCmd)
+
+	runCmd.Flags().StringVar(&configFile, "configFile", "/vagrant/config.yaml", "configuration file")
 	runCmd.Flags().IntVar(&cfg.Port, "port", 5577, "Port to receive management communications")
 	runCmd.Flags().IntVar(&cfg.AgentPort, "agentPort", 5588, "Port to receive agent messages")
 	runCmd.Flags().DurationVar(&cfg.NotifyPeriod, "notifyPeriod", d, "Notification period to the management cluster")
@@ -54,6 +68,68 @@ func init() {
 	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
 	runCmd.Flags().StringVar(&cfg.Geolocation, "geolocation", "", "Edge Controller Geoocation")
 
+	configHelper.BindPFlag("port", runCmd.Flags().Lookup("port"))
+	configHelper.BindPFlag("agentPort", runCmd.Flags().Lookup("agentPort"))
+	configHelper.BindPFlag("notifyPeriod", runCmd.Flags().Lookup("notifyPeriod"))
+	configHelper.BindPFlag("useInMemoryProviders", runCmd.Flags().Lookup("useInMemoryProviders"))
+	configHelper.BindPFlag("useBBoltProviders", runCmd.Flags().Lookup("useBBoltProviders"))
+	configHelper.BindPFlag("bboltpath", runCmd.Flags().Lookup("bboltpath"))
+	configHelper.BindPFlag("joinTokenPath", runCmd.Flags().Lookup("joinTokenPath"))
+	configHelper.BindPFlag("eicapiPort", runCmd.Flags().Lookup("eicapiPort"))
+	configHelper.BindPFlag("name", runCmd.Flags().Lookup("name"))
+	configHelper.BindPFlag("labels", runCmd.Flags().Lookup("labels"))
+	configHelper.BindPFlag("alivePeriod", runCmd.Flags().Lookup("alivePeriod"))
+	configHelper.BindPFlag("geolocation", runCmd.Flags().Lookup("geolocation"))
+
 	// Add plugin-specific flags
 	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)
+}
+
+// ReadConfigFile reads config in /vagrant/config.yaml per default and
+//  fills the config values with the values viper has
+func ReadConfigFile() derrors.Error{
+	log.Info().Str("configFile", configFile).Msg("reading config file")
+
+	// Check if file exists.
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		return derrors.NewInvalidArgumentError("configFile does not exist").WithParams("configFile", configFile)
+	}
+
+	configHelper.SetConfigFile(configFile)
+	configHelper.ReadInConfig()
+
+	if configHelper.IsSet("agentPort"){
+		cfg.AgentPort = configHelper.GetInt("agentPort")
+	}
+	if configHelper.IsSet("useInMemoryProviders"){
+		cfg.UseInMemoryProviders = configHelper.GetBool("useInMemoryProviders")
+	}
+	if configHelper.IsSet("useBBoltProviders"){
+		cfg.UseBBoltProviders = configHelper.GetBool("useBBoltProviders")
+	}
+	if configHelper.IsSet("bboltpath"){
+		cfg.BboltPath = configHelper.GetString("bboltpath")
+	}
+	if configHelper.IsSet("joinTokenPath"){
+		cfg.JoinTokenPath = configHelper.GetString("joinTokenPath")
+	}
+	if configHelper.IsSet("eicapiPort"){
+		cfg.EicApiPort = configHelper.GetInt("eicapiPort")
+	}
+	if configHelper.IsSet("name"){
+		cfg.Name = configHelper.GetString("name")
+	}
+	if configHelper.IsSet("labels"){
+		cfg.Labels = configHelper.GetString("labels")
+	}
+	if configHelper.IsSet("geolocation"){
+		cfg.Geolocation = configHelper.GetString("geolocation")
+	}
+	if configHelper.IsSet("notifyPeriod"){
+		cfg.NotifyPeriod = configHelper.GetDuration("notifyPeriod")
+	}
+	if configHelper.IsSet("alivePeriod"){
+		cfg.AlivePeriod = configHelper.GetDuration("alivePeriod")
+	}
+	return nil
 }
