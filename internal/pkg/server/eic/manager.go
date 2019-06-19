@@ -5,6 +5,7 @@
 package eic
 
 import (
+	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/asset"
 	"github.com/nalej/edge-controller/internal/pkg/provider/metricstorage"
@@ -70,10 +71,20 @@ func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.Agent
 
 	log.Info().Interface("request", request).Msg("Triggering agent operation")
 
+
+	// NP-1506. Limit agent operation pending queue on EC
+	ops, err := m.provider.GetPendingOperations(request.AssetId, false)
+	if err != nil {
+		return nil, conversions.ToGRPCError(err)
+	}
+	if len(ops) > 0 {
+		return nil, conversions.ToGRPCError(derrors.NewFailedPreconditionError("unable to queue this operation, there is already one"))
+	}
+
 	operation := entities.NewAgentOpRequestFromGRPC(request)
 
 	// adds the operation
-	err := m.provider.AddPendingOperation(*operation)
+	err = m.provider.AddPendingOperation(*operation)
 	if err != nil {
 		return nil, conversions.ToDerror(err)
 	}
