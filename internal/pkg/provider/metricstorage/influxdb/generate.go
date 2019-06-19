@@ -19,11 +19,16 @@ import (
 const (
 	readSuffix = "_read"
 	writeSuffix = "_write"
+
+	// Time window in seconds used for point-in-time queries
+	// See comment in generateQuery()
+	defaultMetricsWindow = 60
 )
 
 var fromOverrides = map[string]string{
-	// Calculate millicores used
-	"cpu": "(SELECT round((1-time_idle/(time_user+time_system+time_nice+time_iowait+time_irq+time_softirq+time_steal+time_idle))*1000) AS usage, asset_id, cpu FROM cpu)",
+	// Calculate millicores used as the ratio of difference in idle
+	// ticks and differenc in total ticks
+	"cpu": "(SELECT round((1-difference_time_idle/(difference_time_user+difference_time_system+difference_time_nice+difference_time_iowait+difference_time_irq+difference_time_softirq+difference_time_steal+difference_time_idle))*1000) AS usage FROM (SELECT difference(*) FROM cpu))",
 	"diskio_read": "diskio",
 	"diskio_write": "diskio",
 	"net_read": "net",
@@ -58,14 +63,27 @@ var derivativeMetric = map[string]bool{
 
 // If we need more flexibility than the queries this function can generate,
 // we probably want to create something similar to a query tree
+// Also, I _just_ found out about Flux, which might be a much more suitable
+// query language for our purpose...
 func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) (string, derrors.Error) {
+	// If we want a single point in time, we set resolution to 60s. This
+	// means we get values for all assets in a 60s window. This might not
+	// be the most precise, but if we make this window smaller we might
+	// end up not aggregating over all assets.
+	// Note that this also means that if an asset doesn't send metrics for
+	// more than 60s, its values will not be included in the average. That
+	// is probably reasonable, because at that moment the asset is probably
+	// not available.
+	if !timeRange.Timestamp.IsZero() {
+		timeRange.Resolution = time.Second * defaultMetricsWindow
+	}
+
 	// Determine what to select from. Mostly just a measurement,
 	// but sometimes (e.g., for CPU), we do some pre-processing
 	from, found := fromOverrides[metric]
 	if !found {
 		from = metric
 	}
-	fromClause := fmt.Sprintf("FROM %s", from)
 
 	// Add restrictions in time and asset_id
 	whereClause := whereClause([]string{
@@ -79,30 +97,32 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 		return "", derrors.NewInvalidArgumentError("unsupported metric").WithParams(metric)
 	}
 
-	// First iteration of complete select
+	// For throughput metrics (x per sec) we need a derivative
+	innerFunc := "mean"
+	if derivativeMetric[metric] {
+		metricValue = fmt.Sprintf("%s(%s),1s", innerFunc, metricValue)
+		innerFunc = "derivative"
+	}
+
+	// First complete select with where clause
 	selector := "metric"
-	selectClause := fmt.Sprintf("%s %s %s",
-		// As we either interpolate or aggregate over time, we add a
-		// "mean" here.
-		selectFromFuncFieldAs("mean", metricValue, selector),
-		fromClause,
+	selectClause := fmt.Sprintf("%s FROM %s %s",
+		selectFromFuncFieldAs(innerFunc, metricValue, selector),
+		from,
 		whereClause,
 	)
-
-	// If we want a single point in time, we set resolution to 1s to not
-	// miss anything, and later limit to a single value
-	if !timeRange.Timestamp.IsZero() {
-		timeRange.Resolution = time.Second
-	}
 
 	// Add inner summation if needed (e.g., all CPUs, all disks per asset)
 	sumTag, found := sumTags[metric]
 	if found {
-		innerGroupBy := groupByClause(timeRange.Resolution, []string{"asset_id", sumTag}...)
 		newSelector := "summed_metric"
-		outerSelect := selectFromFuncFieldAs("sum", selector, newSelector)
+		innerGroupBy := groupByClause(timeRange.Resolution, "asset_id", sumTag)
+		selectClause = fmt.Sprintf("%s %s", selectClause, innerGroupBy)
+		selectClause = fmt.Sprintf("%s FROM (%s)",
+			selectFromFuncFieldAs("sum", selector, newSelector),
+			selectClause,
+		)
 		selector = newSelector
-		selectClause = fmt.Sprintf("%s FROM (%s %s)", outerSelect, selectClause, innerGroupBy)
 	}
 
 	// Add time and asset grouping. A resolution of 0 aggregates over
@@ -116,16 +136,6 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 			selectFromFuncFieldAs(aggr.String(), selector, newSelector),
 			selectClause,
 			groupByClause(timeRange.Resolution),
-		)
-		selector = newSelector
-	}
-
-	// For throughput metrics (x per sec) we need a derivative
-	if derivativeMetric[metric] {
-		newSelector := "derv_metric"
-		selectClause = fmt.Sprintf("%s FROM (%s)",
-			selectFromFuncFieldAs("derivative", selector, newSelector),
-			selectClause,
 		)
 		selector = newSelector
 	}
@@ -182,9 +192,19 @@ func whereClauseFromTime(timeRange *entities.TimeRange) string {
 	}
 
 	clauses := make([]string, 0, 2)
+
+	// We always add a start time, even if it's 0. This is to work around
+	// an apparent bug in InfluxDB's difference() that doesn't seem to
+	// return any results without a "time >" clause.
+	var startUnix int64 = 0
 	if !start.IsZero() {
-		clauses = append(clauses, fmt.Sprintf("time >= %d", start.UnixNano()))
+		// We only want to set a valid epoch-based timestamp to avoid
+		// a real big negative number in the query to represent year
+		// zero.
+		startUnix = start.UnixNano()
 	}
+	clauses = append(clauses, fmt.Sprintf("time >= %d", startUnix))
+
 	if !end.IsZero() {
 		clauses = append(clauses, fmt.Sprintf("time <= %d", end.UnixNano()))
 	}
