@@ -1,0 +1,7 @@
+
+joinTokenPath: /vagrant/joinToken.json
+useBBoltProviders: true
+bboltpath: /home/vagrant/database.db
+name: EdgeController001
+#labels: "name:test"
+#geolocation: "Madrid, Madrid, Spain"

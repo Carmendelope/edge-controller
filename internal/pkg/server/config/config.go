@@ -62,8 +62,10 @@ type Config struct {
 	PluginConfig *viper.Viper
 }
 
+
 // Validate the current configuration.
 func (conf * Config) Validate() derrors.Error {
+
 	if conf.Port <= 0 {
 		return derrors.NewInvalidArgumentError("port must be specified")
 	}
