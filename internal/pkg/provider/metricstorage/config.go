@@ -13,6 +13,8 @@ import (
 
 	"github.com/influxdata/influxql" // For convenient duration parsing
 	"github.com/spf13/viper"
+
+	"github.com/rs/zerolog/log"
 )
 
 type ConnectionConfig struct {
@@ -56,6 +58,7 @@ func NewConnectionConfig(conf *viper.Viper) (*ConnectionConfig, derrors.Error) {
 
 func retentionFromStr(retentionStr string) (time.Duration, derrors.Error) {
 	if retentionStr == "inf" {
+		log.Warn().Msg("metrics data retention period set to infinite - data will never be expired")
 		return 0, nil
 	}
 

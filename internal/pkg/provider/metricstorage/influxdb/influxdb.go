@@ -189,19 +189,26 @@ func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSe
 // duration after which data gets deleted.
 // This either creates or alters the retention policy
 func (i *InfluxDBProvider) SetRetention(dur time.Duration) (derrors.Error) {
-	retentionStr := "inf"
-	if dur > 0 {
-		retentionStr = dur.String()
-	}
+	var retentionStr string
+	var shardStr string
 
-	if dur < time.Hour {
+	if dur == 0 {
+		retentionStr = "inf"
+		shardStr = "1w"
+	} else if dur < time.Hour {
 		return derrors.NewInvalidArgumentError("retention should be at least 1h").WithParams(dur.String())
-	}
-
-	// Sensible shard duration
-	shardStr := "1h"
-	if dur >= time.Hour * 48 {
-		shardStr = "1d"
+	} else {
+		retentionStr = dur.String()
+		// Sensible shard duration
+		if dur < time.Hour * 48 {
+			// 2 day retention = 1h shard
+			shardStr = "1h"
+		} else if dur < time.Hour * 24 * 180 {
+			// 6 mo retention = 1d shard
+			shardStr = "1d"
+		} else {
+			shardStr = "1w"
+		}
 	}
 
 	// Query with retention policy name, database name, retention policy duration

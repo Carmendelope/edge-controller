@@ -45,7 +45,7 @@ func init() {
 	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
 		Name: "retention",
 		Description: "Default metrics data retention duration",
-		Default: "inf",
+		Default: "30d",
 	})
 	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
 		Name: "influxdb.address",
