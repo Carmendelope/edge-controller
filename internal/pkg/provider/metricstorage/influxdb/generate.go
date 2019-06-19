@@ -19,6 +19,10 @@ import (
 const (
 	readSuffix = "_read"
 	writeSuffix = "_write"
+
+	// Time window in seconds used for point-in-time queries
+	// See comment in generateQuery()
+	defaultMetricsWindow = 60
 )
 
 var fromOverrides = map[string]string{
@@ -62,10 +66,16 @@ var derivativeMetric = map[string]bool{
 // Also, I _just_ found out about Flux, which might be a much more suitable
 // query language for our purpose...
 func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) (string, derrors.Error) {
-	// If we want a single point in time, we set resolution to 1s to not
-	// miss anything, and later limit to a single value
+	// If we want a single point in time, we set resolution to 60s. This
+	// means we get values for all assets in a 60s window. This might not
+	// be the most precise, but if we make this window smaller we might
+	// end up not aggregating over all assets.
+	// Note that this also means that if an asset doesn't send metrics for
+	// more than 60s, its values will not be included in the average. That
+	// is probably reasonable, because at that moment the asset is probably
+	// not available.
 	if !timeRange.Timestamp.IsZero() {
-		timeRange.Resolution = time.Second
+		timeRange.Resolution = time.Second * defaultMetricsWindow
 	}
 
 	// Determine what to select from. Mostly just a measurement,
@@ -105,11 +115,14 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 	// Add inner summation if needed (e.g., all CPUs, all disks per asset)
 	sumTag, found := sumTags[metric]
 	if found {
-		innerGroupBy := groupByClause(timeRange.Resolution, []string{"asset_id", sumTag}...)
 		newSelector := "summed_metric"
-		outerSelect := selectFromFuncFieldAs("sum", selector, newSelector)
+		innerGroupBy := groupByClause(timeRange.Resolution, "asset_id", sumTag)
+		selectClause = fmt.Sprintf("%s %s", selectClause, innerGroupBy)
+		selectClause = fmt.Sprintf("%s FROM (%s)",
+			selectFromFuncFieldAs("sum", selector, newSelector),
+			selectClause,
+		)
 		selector = newSelector
-		selectClause = fmt.Sprintf("%s FROM (%s %s)", outerSelect, selectClause, innerGroupBy)
 	}
 
 	// Add time and asset grouping. A resolution of 0 aggregates over
