@@ -7,6 +7,8 @@ package metricstorage
 // Metric storage provider interfaces and creation
 
 import (
+	"time"
+
 	"github.com/nalej/derrors"
 
 	"github.com/nalej/edge-controller/internal/pkg/entities"
@@ -43,6 +45,10 @@ type Provider interface {
 	// aggregated with aggr. If tagSelector contains a single entry,
 	// values for that specific tag are returned and aggr is ignored.
 	QueryMetric(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) ([]entities.MetricValue, derrors.Error)
+
+	// Set retention policy. For now, we just set one single expiration
+	// duration after which data gets deleted.
+	SetRetention(dur time.Duration) (derrors.Error)
 }
 
 type ProviderType string

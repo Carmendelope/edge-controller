@@ -100,12 +100,13 @@ func (i *InfluxDBProvider) CreateSchema(ifNeeded bool) derrors.Error {
 		return nil
 	}
 
-	response, err = i.query(fmt.Sprintf(queryCreateDatabase, i.database))
+	// Query with database name, retention policy duration, retention policy name
+	// (which we make the same as the database name for the default policy for now)
+	response, err = i.query(fmt.Sprintf(queryCreateDatabase, i.database, "inf", i.database))
 	if err != nil {
 		return derrors.NewUnavailableError("unable to create database", err).WithParams(i.database)
 	}
 
-	// TODO: retention policies
 	return nil
 }
 
@@ -184,6 +185,50 @@ func (i *InfluxDBProvider) QueryMetric(metric string, tagSelector entities.TagSe
 	return metricValuesFromResponse(response)
 }
 
+// Set retention policy. For now, we just set one single expiration
+// duration after which data gets deleted.
+// This either creates or alters the retention policy
+func (i *InfluxDBProvider) SetRetention(dur time.Duration) (derrors.Error) {
+	var retentionStr string
+	var shardStr string
+
+	if dur == 0 {
+		retentionStr = "inf"
+		shardStr = "1w"
+	} else if dur < time.Hour {
+		return derrors.NewInvalidArgumentError("retention should be at least 1h").WithParams(dur.String())
+	} else {
+		retentionStr = dur.String()
+		// Sensible shard duration
+		if dur < time.Hour * 48 {
+			// 2 day retention = 1h shard
+			shardStr = "1h"
+		} else if dur < time.Hour * 24 * 180 {
+			// 6 mo retention = 1d shard
+			shardStr = "1d"
+		} else {
+			shardStr = "1w"
+		}
+	}
+
+	// Query with retention policy name, database name, retention policy duration
+	// (which we make the same as the database name for the default policy for now)
+	_, err := i.query(fmt.Sprintf(queryAlterRetentionPolicy, i.database, i.database, retentionStr, shardStr))
+	if err != nil {
+		return derrors.NewUnavailableError("unable to change retention policy", err).WithParams(i.database)
+	}
+	return nil
+}
+
+func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
+	query := influx.NewQuery(q, i.database, "")
+	response, err := i.client.Query(query)
+	if err == nil {
+		err = response.Error()
+	}
+	return response, err
+}
+
 func metricValuesFromResponse(response *influx.Response) ([]entities.MetricValue, derrors.Error) {
 	values := getFirstValues(response)
 	result := make([]entities.MetricValue, 0, len(values))
@@ -234,15 +279,6 @@ func valueFromInterface(i interface{}) (int64, derrors.Error) {
 	}
 
 	return value, nil
-}
-
-func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
-	query := influx.NewQuery(q, i.database, "")
-	response, err := i.client.Query(query)
-	if err == nil {
-		err = response.Error()
-	}
-	return response, err
 }
 
 func getFirstValues(response *influx.Response) [][]interface{} {

@@ -7,6 +7,8 @@ package metrics
 // Edge Controller metrics storage plugin
 
 import (
+	"time"
+
 	"github.com/nalej/derrors"
 
 	plugin "github.com/nalej/infra-net-plugin"
@@ -30,9 +32,21 @@ type Metrics struct {
 
 	// Storage provider
 	provider metricstorage.Provider
+
+	// Retention duration - we store this because we'll get it during
+	// initialization but need it during plugin start, when we create
+	// schema and set retention policy. This way, if we restart the
+	// edge controller with a different retention, we alter the already
+	// existing database to reflect that.
+	retention time.Duration
 }
 
 func init() {
+	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
+		Name: "retention",
+		Description: "Default metrics data retention duration",
+		Default: "30d",
+	})
 	metricsDescriptor.AddFlag(plugin.FlagDescriptor{
 		Name: "influxdb.address",
 		Description: "InfluxDB address",
@@ -61,6 +75,7 @@ func NewMetrics(config *viper.Viper) (plugin.Plugin, derrors.Error) {
 
 	m := &Metrics{
 		provider: provider,
+		retention: connConfig.Retention,
 	}
 
 	return m, nil
@@ -78,6 +93,11 @@ func (m *Metrics) StartPlugin() (derrors.Error) {
 	}
 
 	derr = m.provider.CreateSchema(true)
+	if derr != nil {
+		return derr
+	}
+
+	derr = m.provider.SetRetention(m.retention)
 	if derr != nil {
 		return derr
 	}
