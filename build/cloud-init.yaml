@@ -1,0 +1,18 @@
+#cloud-config
+write_files:
+  - content: |
+      # edge-controller configuration file
+      
+      joinTokenPath: /etc/edge-controller/joinToken.json
+      useBBoltProviders: true
+      bboltpath: /var/lib/edge-controller/database.db
+      name: EdgeController001
+      #labels: "name:test"
+      #geolocation: "Madrid, Madrid, Spain"
+    path: /etc/edge-controller/config.yaml
+  - encoding: b64
+    content: <joinToken.json BASE64 ENCODED CONTENTS>
+    path: /etc/edge-controller/joinToken.json
+
+runcmd:
+  - [ systemctl, restart, edge-controller.service ]
