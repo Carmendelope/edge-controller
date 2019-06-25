@@ -22,6 +22,8 @@ type MockupAssetProvider struct {
 	pendingOps map[string][]entities.AgentOpRequest
 	// pendingResult with a map of pending responses per operation identifier.
 	pendingResult map[string]entities.AgentOpResponse
+	// pendingECResult with a map of pending responses per operation identifier.
+	pendingECResult map[string]entities.EdgeControllerOpResponse
 	// joinToken map with the join tokens and their expiration date.
 	joinToken map[string]int64
 	// agentStart map with the start info by asset identifier.
@@ -34,6 +36,7 @@ func NewMockupAssetProvider() * MockupAssetProvider{
 		assetsByToken: make(map[string]entities.AgentJoinInfo, 0),
 		pendingOps: make(map[string][]entities.AgentOpRequest, 0),
 		pendingResult: make(map[string]entities.AgentOpResponse, 0),
+		pendingECResult: make(map[string]entities.EdgeControllerOpResponse, 0),
 		joinToken: make(map[string]int64, 0),
 		agentStart: make(map[string]entities.AgentStartInfo, 0),
 	}
@@ -103,6 +106,30 @@ func (m *MockupAssetProvider) GetPendingOpResponses(removeEntries bool)([]entiti
 	}
 	return result, nil
 }
+
+
+// AddECOpResponse stores a response for an operation executed by the edge controller.
+func (m *MockupAssetProvider) AddECOpResponse(op entities.EdgeControllerOpResponse) derrors.Error{
+	m.Lock()
+	defer m.Unlock()
+
+	m.pendingECResult[op.OperationId] = op
+	return nil
+}
+// GetPendingECOpResponses retrieves the list of pending operation responses
+func (m *MockupAssetProvider) GetPendingECOpResponses(removeEntries bool)([]entities.EdgeControllerOpResponse, derrors.Error){
+	m.Lock()
+	defer m.Unlock()
+	result := make([]entities.EdgeControllerOpResponse, 0, len(m.pendingECResult))
+	for _, v := range m.pendingECResult{
+		result = append(result, v)
+	}
+	if removeEntries{
+		m.pendingECResult = make(map[string]entities.EdgeControllerOpResponse, 0)
+	}
+	return result, nil
+}
+
 
 // AddAgentStart stores a pending message with the agent start information.
 func (m *MockupAssetProvider) AddAgentStart(op entities.AgentStartInfo) derrors.Error{
@@ -203,6 +230,7 @@ func (m *MockupAssetProvider) Clear() derrors.Error{
 	m.assetsByToken = make(map[string]entities.AgentJoinInfo, 0)
 	m.pendingOps = make(map[string][]entities.AgentOpRequest, 0)
 	m.pendingResult = make(map[string]entities.AgentOpResponse, 0)
+	m.pendingECResult = make(map[string]entities.EdgeControllerOpResponse, 0)
 	m.joinToken = make(map[string]int64, 0)
 	m.agentStart = make(map[string]entities.AgentStartInfo, 0)
 	m.Unlock()

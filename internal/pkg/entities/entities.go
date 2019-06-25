@@ -177,8 +177,6 @@ func NewAgentOpResponseFromGRPC(response * grpc_inventory_manager_go.AgentOpResp
 }
 
 func (aor * AgentOpResponse) ToGRPC() * grpc_inventory_manager_go.AgentOpResponse{
-
-
 	return &grpc_inventory_manager_go.AgentOpResponse{
 		OrganizationId:       aor.OrganizationId,
 		EdgeControllerId:     aor.EdgeControllerId,
@@ -303,5 +301,55 @@ func ValidFullAssetID (request *grpc_inventory_manager_go.FullAssetId) derrors.E
 		return derrors.NewInvalidArgumentError("asset_id cannot be empty")
 	}
 
+	return nil
+}
+
+type EdgeControllerOpResponse struct{
+	// OrganizationId with the organization identifier.
+	OrganizationId string `json:"organization_id,omitempty"`
+	// EdgeControllerId with the EIC identifier that facilitated the operation.
+	EdgeControllerId string `json:"edge_controller_id,omitempty"`
+	// OperationId with the operation identifier.
+	OperationId string `json:"operation_id,omitempty"`
+	// Timestamp of the response.
+	Timestamp int64 `json:"timestamp,omitempty"`
+	// Status of the operation
+	Status string `json:"status,omitempty"`
+	// Info with additional information about the result.
+	Info                 string   `json:"info,omitempty"`
+}
+
+func NewEdgeControllerOpResponseFromGRPC(response * grpc_inventory_manager_go.EdgeControllerOpResponse) * EdgeControllerOpResponse{
+	return &EdgeControllerOpResponse{
+		OrganizationId:       response.OrganizationId,
+		EdgeControllerId:     response.EdgeControllerId,
+		OperationId:          response.OperationId,
+		Timestamp:            response.Timestamp,
+		Status:               response.Status.String(),
+		Info:                 response.Info,
+	}
+}
+
+func (ecor * EdgeControllerOpResponse) ToGRPC() *grpc_inventory_manager_go.EdgeControllerOpResponse{
+	return &grpc_inventory_manager_go.EdgeControllerOpResponse{
+		OrganizationId:       ecor.OrganizationId,
+		EdgeControllerId:     ecor.EdgeControllerId,
+		OperationId:          ecor.OperationId,
+		Timestamp:            ecor.Timestamp,
+		Status:               grpc_inventory_go.OpStatus(grpc_inventory_go.OpStatus_value[ecor.Status]),
+		Info:                 ecor.Info,
+	}
+}
+
+func ValidInstallAgentRequest(request *grpc_inventory_manager_go.InstallAgentRequest) derrors.Error{
+	if request.OrganizationId == ""{
+		return derrors.NewInvalidArgumentError("organization_id cannot be empty")
+	}
+	if request.EdgeControllerId == ""{
+		return derrors.NewInvalidArgumentError("edge_controller_id cannot be empty")
+	}
+	if request.TargetHost == ""{
+		return derrors.NewInvalidArgumentError("target_host cannot be empty")
+	}
 	return nil
 }

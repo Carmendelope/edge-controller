@@ -261,6 +261,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:a91d46ca072eed54599a32993a893e487b3d3e2be0dfb12e2a080c7564b2cc3c"
+  name = "github.com/nalej/service-net-agent"
+  packages = ["pkg/plugin"]
+  pruneopts = ""
+  revision = "ada8cd2d7940fc9deaf3fd31521367527a755a01"
+
+[[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"
   name = "github.com/onsi/ginkgo"
   packages = [
@@ -559,6 +567,7 @@
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/nalej/infra-net-plugin",
+    "github.com/nalej/service-net-agent/pkg/plugin",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/rs/zerolog",

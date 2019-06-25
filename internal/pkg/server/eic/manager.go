@@ -28,12 +28,13 @@ type Manager struct{
 	provider asset.Provider
 
 	metricStorageProvider metricstorage.Provider
-
+	agentInstaller *AgentInstaller
 	notifier *agent.Notifier
 }
 
 func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider, notifier *agent.Notifier) Manager{
-	return Manager{cfg, assetProvider, metricStorageProvider, notifier}
+	installer := NewAgentInstaller(notifier)
+	return Manager{cfg, assetProvider, metricStorageProvider, installer, notifier}
 }
 
 func (m *Manager) deleteVPNAccount() {
@@ -234,4 +235,16 @@ func (m *Manager) UninstallAgent( assetID *grpc_inventory_manager_go.FullAssetId
 	}
 
 	return &grpc_common_go.Success{}, nil
+}
+
+func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
+	// Prepare the data to trigger the async install
+	opID := uuid.NewV4().String()
+	go m.agentInstaller.InstallAgent(opID, request)
+	response := &grpc_inventory_manager_go.InstallAgentResponse{
+		OrganizationId:       request.OrganizationId,
+		EdgeControllerId:     request.EdgeControllerId,
+		OperationId:          opID,
+	}
+	return response, nil
 }

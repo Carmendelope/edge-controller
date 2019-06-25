@@ -17,6 +17,7 @@ const (
 	assetsByTokenBucket 	= "assetsByTokenBucket"
 	pendingOpsBucket 		= "pendingOpsBucket"
 	pendingResultBucket 	= "pendingResultBucket"
+	pendingECResultBucket 	= "pendingECResultBucket"
 	joinTokenBucket 		= "joinTokenBucket"
 	agentStartBucket 		= "agentStartBucket"
 )
@@ -95,7 +96,7 @@ func (b *BboltAssetProvider) AddPendingOperation(op entities.AgentOpRequest) der
 	})
 
 	if newErr != nil {
-		return conversions.ToDerror(newErr)
+		return derrors.AsError(newErr, "cannot add pending operation")
 	}
 
 	return nil
@@ -154,12 +155,92 @@ func (b *BboltAssetProvider) GetPendingOperations(assetID string, removeEntries 
 	})
 
 	if err != nil {
-		return result, conversions.ToDerror(err)
+		return result, derrors.AsError(err, "cannot retrieve pending agent operations")
 	}
 
 	return result, nil
 
 }
+
+// AddECOpResponse stores a response for an operation executed by the edge controller.
+func (b *BboltAssetProvider) AddECOpResponse(op entities.EdgeControllerOpResponse) derrors.Error{
+	b.Lock()
+	defer b.Unlock()
+
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return checkErr
+	}
+
+	toAddBytes, err := json.Marshal(op)
+	if err != nil {
+		return derrors.AsError(err, "cannot marshal entity")
+	}
+
+	err =  b.DB.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte(pendingECResultBucket))
+		if err != nil {
+			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", pendingECResultBucket))
+		}
+
+		key := []byte(op.OperationId)
+		// add pending operation (or rewrite previous result)
+		if err := bk.Put(key, toAddBytes); err != nil {
+			return derrors.NewInternalError("Cannot registry ec operation result")
+		}
+		return nil
+	})
+
+	return nil
+}
+// GetPendingECOpResponses retrieves the list of pending operation responses
+func (b *BboltAssetProvider) GetPendingECOpResponses(removeEntries bool)([]entities.EdgeControllerOpResponse, derrors.Error){
+	b.Lock()
+	defer b.Unlock()
+
+	result := make([]entities.EdgeControllerOpResponse, 0)
+
+	checkErr := b.CheckConnection()
+	if checkErr != nil {
+		return result, checkErr
+	}
+
+	err := b.DB.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte(pendingECResultBucket))
+		if err != nil {
+			return derrors.NewInternalError(fmt.Sprintf("Failed to get bucket '%s'", pendingECResultBucket))
+		}
+
+		// get all the operations (without key)
+		bk.ForEach(func(k, v []byte) error {
+			var response entities.EdgeControllerOpResponse
+			if err := json.Unmarshal(v, &response); err != nil {
+				return derrors.NewInternalError("error creating object")
+			}
+			result = append(result, response)
+
+			return nil
+		})
+
+		// if removes -> foreach response -> remove it
+		if removeEntries{
+			for _, res := range result {
+				if err := bk.Delete([]byte(res.OperationId)); err != nil {
+					return derrors.NewInternalError(fmt.Sprintf("Failed to delete '%s': %v", res.OperationId, err))
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return result, derrors.AsError(err, "cannot retrieve pending EC operations")
+	}
+
+	return result, nil
+}
+
 
 // AddPendingOperationResult stores a pending operation for an agent.
 func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.Error{
@@ -174,7 +255,7 @@ func (b *BboltAssetProvider) AddOpResponse(op entities.AgentOpResponse) derrors.
 
 	toAddBytes, err := json.Marshal(op)
 	if err != nil {
-		return conversions.ToDerror(err)
+		return derrors.AsError(err, "cannot marshal entity")
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -237,7 +318,7 @@ func (b *BboltAssetProvider) GetPendingOpResponses(removeEntries bool)([]entitie
 	})
 
 	if err != nil {
-		return result, conversions.ToDerror(err)
+		return result, derrors.AsError(err, "cannot get pending operations")
 	}
 
 	return result, nil
@@ -256,7 +337,7 @@ func (b *BboltAssetProvider) AddAgentStart(op entities.AgentStartInfo) derrors.E
 
 	toAddBytes, err := json.Marshal(op)
 	if err != nil {
-		return conversions.ToDerror(err)
+		return derrors.AsError(err, "cannot marshal entity")
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -275,7 +356,7 @@ func (b *BboltAssetProvider) AddAgentStart(op entities.AgentStartInfo) derrors.E
 	})
 
 	if err != nil {
-		return conversions.ToDerror(err)
+		return derrors.AsError(err, "cannot add agent start")
 	}
 
 	return nil
@@ -324,7 +405,7 @@ func (b *BboltAssetProvider) GetPendingAgentStart(removeEntries bool) ([]entitie
 	})
 
 	if err != nil {
-		return result, conversions.ToDerror(err)
+		return result, derrors.AsError(err, "cannot get pending agent start messages")
 	}
 
 	return result, nil
@@ -377,7 +458,7 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 	})
 
 	if newErr != nil {
-		return conversions.ToDerror(newErr)
+		return derrors.AsError(newErr, "cannot add managed asset")
 	}
 
 	return nil
@@ -433,7 +514,7 @@ func (b *BboltAssetProvider) RemoveManagedAsset(assetID string) derrors.Error {
 	})
 
 	if newErr != nil {
-		return conversions.ToDerror(newErr)
+		return derrors.AsError(newErr, "cannot remove managed asset")
 	}
 
 	return nil
@@ -472,7 +553,7 @@ func (b *BboltAssetProvider) GetAssetByToken(token string) (*entities.AgentJoinI
 	})
 
 	if err != nil {
-		return nil, conversions.ToDerror(err)
+		return nil, derrors.AsError(err, "cannot get asset by token")
 	}
 
 	return &result, nil
@@ -492,7 +573,7 @@ func (b *BboltAssetProvider) AddJoinToken(joinToken string)  (*entities.JoinToke
 	expired := time.Now().Add(AgentJoinTokenTTL).Unix()
 	toAddBytes, err := json.Marshal(expired)
 	if err != nil {
-		return nil, conversions.ToDerror(err)
+		return nil, derrors.AsError(err, "cannot marshal entity")
 	}
 
 	err =  b.DB.Update(func(tx *bolt.Tx) error {
@@ -510,7 +591,7 @@ func (b *BboltAssetProvider) AddJoinToken(joinToken string)  (*entities.JoinToke
 	})
 
 	if err != nil {
-		return nil, conversions.ToDerror(err)
+		return nil, derrors.AsError(err, "cannot add join token")
 	}
 
 	return &entities.JoinToken{Token:joinToken, ExpiredOn:expired}, nil
@@ -557,7 +638,7 @@ func (b *BboltAssetProvider) CheckJoinToken(joinToken string) (bool, derrors.Err
 	})
 
 	if err != nil {
-		return false, conversions.ToDerror(err)
+		return false, derrors.AsError(err, "cannot check join token")
 	}
 
 	return check, nil
@@ -589,7 +670,7 @@ func (b *BboltAssetProvider) clear(table string) derrors.Error{
 		return nil
 	})
 
-	return conversions.ToDerror(err)
+	return derrors.AsError(err, "cannot clear table")
 }
 
 // Clear all elements

@@ -41,6 +41,17 @@ func CreateTestAgentOpResponse(assetID string) * entities.AgentOpResponse{
 	}
 }
 
+func CreateTestECOpResponse() * entities.EdgeControllerOpResponse{
+	return &entities.EdgeControllerOpResponse{
+		OrganizationId:   uuid.NewV4().String(),
+		EdgeControllerId: uuid.NewV4().String(),
+		OperationId:      uuid.NewV4().String(),
+		Timestamp:        time.Now().Unix(),
+		Status:           grpc_inventory_go.OpStatus_SUCCESS.String(),
+		Info:             "",
+	}
+}
+
 func CreateTestAgentStartInfo(assetID string) * entities.AgentStartInfo{
 	return &entities.AgentStartInfo{
 		Created: time.Now().Unix(),
@@ -134,6 +145,37 @@ func RunTest(provider Provider){
 			gomega.Expect(len(retrievedRemoving)).Should(gomega.Equal(numOps))
 
 			retrieved, err = provider.GetPendingOpResponses(false)
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(retrieved)).Should(gomega.Equal(0))
+		})
+	})
+
+	ginkgo.Context("EC Operation responses", func(){
+		ginkgo.It("should be able to add an ec operation response", func(){
+		    toAdd := CreateTestECOpResponse()
+			err := provider.AddECOpResponse(*toAdd)
+			gomega.Expect(err).To(gomega.Succeed())
+			retrievedRemoving, err := provider.GetPendingECOpResponses(true)
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(retrievedRemoving)).Should(gomega.Equal(1))
+			gomega.Expect(retrievedRemoving[0].OperationId).Should(gomega.Equal(toAdd.OperationId))
+		})
+		ginkgo.It("should be able to get ec pending operation responses", func(){
+			numOps := 10
+			for i := 0; i < numOps; i ++{
+				toAdd := CreateTestECOpResponse()
+				err := provider.AddECOpResponse(*toAdd)
+				gomega.Expect(err).To(gomega.Succeed())
+			}
+			retrieved, err := provider.GetPendingECOpResponses(false)
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(retrieved)).Should(gomega.Equal(numOps))
+
+			retrievedRemoving, err := provider.GetPendingECOpResponses(true)
+			gomega.Expect(err).To(gomega.Succeed())
+			gomega.Expect(len(retrievedRemoving)).Should(gomega.Equal(numOps))
+
+			retrieved, err = provider.GetPendingECOpResponses(false)
 			gomega.Expect(err).To(gomega.Succeed())
 			gomega.Expect(len(retrieved)).Should(gomega.Equal(0))
 		})

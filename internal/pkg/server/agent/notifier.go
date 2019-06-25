@@ -193,9 +193,8 @@ func (n * Notifier) NotifyCallback(response * grpc_inventory_manager_go.AgentOpR
 	defer n.Unlock()
 	err := n.provider.AddOpResponse(*entities.NewAgentOpResponseFromGRPC(response))
 	if err != nil{
-		return nil
+		return err
 	}
-	// TODO Implement send or queue
 	return nil
 }
 
@@ -239,4 +238,14 @@ func (n *Notifier) RemovePendingUninstall (assetId string) {
 		log.Warn().Str("assetID", assetId).Msg("not found in assetUninstall map")
 	}
 
+}
+
+func (n *Notifier) NotifyECOpResponse(response * grpc_inventory_manager_go.EdgeControllerOpResponse) derrors.Error{
+	n.Lock()
+	defer n.Unlock()
+	err := n.provider.AddECOpResponse(*entities.NewEdgeControllerOpResponseFromGRPC(response))
+	if err != nil{
+		return err
+	}
+	return nil
 }
