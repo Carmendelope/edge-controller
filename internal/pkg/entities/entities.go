@@ -185,7 +185,7 @@ func (aor * AgentOpResponse) ToGRPC() * grpc_inventory_manager_go.AgentOpRespons
 		AssetId:              aor.AssetId,
 		OperationId:          aor.OperationId,
 		Timestamp:            aor.Timestamp,
-		Status:               grpc_inventory_manager_go.AgentOpStatus(grpc_inventory_manager_go.AgentOpStatus_value[aor.Status]),
+		Status:               grpc_inventory_go.OpStatus(grpc_inventory_go.OpStatus_value[aor.Status]),
 		Info:                 aor.Info,
 	}
 }

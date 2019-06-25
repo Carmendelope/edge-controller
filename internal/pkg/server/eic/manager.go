@@ -95,7 +95,7 @@ func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.Agent
 		AssetId:			request.AssetId,
 		OperationId: 		request.OperationId,
 		Timestamp:			operation.Created,
-		Status:				grpc_inventory_manager_go.AgentOpStatus_SCHEDULED,
+		Status:				grpc_inventory_go.OpStatus_SCHEDULED,
 		Info: "",
 	}, nil
 }
@@ -224,7 +224,7 @@ func (m *Manager) UninstallAgent( assetID *grpc_inventory_manager_go.FullAssetId
 			AssetId: assetID.AssetId,
 			OperationId: operation.OperationId,
 			Timestamp: time.Now().Unix(),
-			Status: grpc_inventory_manager_go.AgentOpStatus_CANCELED.String(),
+			Status: grpc_inventory_go.OpStatus_CANCELED.String(),
 			Info: CanceledReponseInfo,
 		})
 		if err != nil {
