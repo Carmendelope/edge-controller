@@ -54,7 +54,7 @@ func init() {
 
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().StringVar(&configFile, "configFile", "/vagrant/config.yaml", "configuration file")
+	runCmd.Flags().StringVar(&configFile, "configFile", "config.yaml", "configuration file")
 	runCmd.Flags().IntVar(&cfg.Port, "port", 5577, "Port to receive management communications")
 	runCmd.Flags().IntVar(&cfg.AgentPort, "agentPort", 5588, "Port to receive agent messages")
 	runCmd.Flags().DurationVar(&cfg.NotifyPeriod, "notifyPeriod", d, "Notification period to the management cluster")
@@ -85,7 +85,7 @@ func init() {
 	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)
 }
 
-// ReadConfigFile reads config in /vagrant/config.yaml per default and
+// ReadConfigFile reads config in config.yaml per default and
 //  fills the config values with the values viper has
 func ReadConfigFile() derrors.Error{
 	log.Info().Str("configFile", configFile).Msg("reading config file")

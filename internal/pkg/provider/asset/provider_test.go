@@ -6,7 +6,7 @@ package asset
 
 import (
 	"github.com/nalej/edge-controller/internal/pkg/entities"
-	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"github.com/satori/go.uuid"
@@ -36,7 +36,7 @@ func CreateTestAgentOpResponse(assetID string) * entities.AgentOpResponse{
 		AssetId:          assetID,
 		OperationId:      uuid.NewV4().String(),
 		Timestamp:        time.Now().Unix(),
-		Status:           grpc_inventory_manager_go.AgentOpStatus_SUCCESS.String(),
+		Status:           grpc_inventory_go.OpStatus_SUCCESS.String(),
 		Info:             "",
 	}
 }
