@@ -164,7 +164,7 @@ func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 		if len(assets) == 1 {
 			grpcResult.AssetId = assets[0]
 		} else {
-			grpcResult.AssetId = aggrMethod.String()
+			grpcResult.Aggregation = request.GetAggregation()
 		}
 
 		grpcResults[metric] = &grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics{
