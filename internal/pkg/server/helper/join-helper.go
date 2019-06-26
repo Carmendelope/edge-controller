@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/nalej/derrors"
 	"github.com/nalej/grpc-eic-api-go"
+	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
@@ -162,12 +163,23 @@ func (j * JoinHelper) Join (name string, labels string, geolocation string) (*gr
 		return nil, err
 	}
 
+	// get assetInfo (hw, os and storage info)
+	var assetInfo *grpc_inventory_go.AssetInfo
+	inventory, err := NewInventory()
+	if err != nil {
+		log.Error().Str("error", err.DebugReport()).Msg("unable to get asset info for EC")
+	}else{
+		assetInfo = inventory.GetAssetInfo()
+		log.Info().Interface("assetInfo", assetInfo).Msg("asset Info")
+	}
+
 	joinResponse, joinErr := client.Join(ctx, &grpc_inventory_manager_go.EICJoinRequest{
 		OrganizationId: j.EicToken.OrganizationId,
 		Name: name,
 		Labels:joinLabels,
 		Geolocation: geolocation,
 		Ips: ips,
+		AssetInfo:assetInfo,
 	})
 	if joinErr != nil {
 		log.Error().Str("trace", conversions.ToDerror(joinErr).DebugReport()).Msg("error getting credentials")

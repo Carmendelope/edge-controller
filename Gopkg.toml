@@ -20,27 +20,23 @@
 
 [[constraint]]
     name="github.com/nalej/grpc-inventory-manager-go"
-    version="v0.0.38"
+    version="=v0.0.46"
 
 [[constraint]]
     name="github.com/nalej/grpc-edge-inventory-proxy-go"
-    version="v0.0.11"
+    version="=v0.0.12"
 
 [[constraint]]
     name="github.com/nalej/grpc-edge-controller-go"
-    version="v0.0.12"
+    version="=v0.0.13"
 
 [[constraint]]
      name="github.com/nalej/grpc-inventory-go"
-     version="v0.0.23"
-
-[[constraint]]
-     name="github.com/nalej/grpc-authx-go"
-     version="v0.0.5"
+     version="=v0.0.25"
 
 [[constraint]]
     name="github.com/nalej/grpc-eic-api-go"
-    version="v0.0.3"
+    version="=v0.0.3"
 
 [[constraint]]
     name="github.com/nalej/derrors"
@@ -64,7 +60,7 @@
 
 [[constraint]]
   name = "github.com/nalej/infra-net-plugin"
-  version = "v1.0.0"
+  version = "=v1.0.0"
 
 [[constraint]]
   name = "github.com/influxdata/influxdb1-client"
@@ -72,4 +68,8 @@
 
 [[constraint]]
   name = "github.com/influxdata/influxql"
-  version = "v1.0.0"
+  version = "=v1.0.0"
+
+[[constraint]]
+  name = "github.com/nalej/sysinfo"
+  version = "=v1.1.0"
