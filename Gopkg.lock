@@ -2,12 +2,31 @@
 
 
 [[projects]]
+  digest = "1:f82b8ac36058904227087141017bb82f4b0fc58272990a4cdae3e2d6d222644e"
+  name = "github.com/StackExchange/wmi"
+  packages = ["."]
+  pruneopts = ""
+  revision = "5d049714c4a64225c3c79a7cf7d02f7fb5b96338"
+  version = "1.0.0"
+
+[[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   pruneopts = ""
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
+
+[[projects]]
+  digest = "1:b6581f9180e0f2d5549280d71819ab951db9d511478c87daca95669589d505c0"
+  name = "github.com/go-ole/go-ole"
+  packages = [
+    ".",
+    "oleutil",
+  ]
+  pruneopts = ""
+  revision = "97b6244175ae18ea6eef668034fd6565847501c9"
+  version = "v1.2.4"
 
 [[projects]]
   digest = "1:fd53b471edb4c28c7d297f617f4da0d33402755f58d6301e7ca1197ef0a90937"
@@ -221,12 +240,12 @@
   version = "v0.0.25"
 
 [[projects]]
-  digest = "1:e802d5b93ef69fcae199683c6c57e78277438bf89761ff2f00a0d0416900a5fd"
+  digest = "1:093309473e6dc820f83b0efdd4c424aa4393e13d585ed0d159322c3aec818f71"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "c4079310ade76d1627242730a76253c8830180a2"
-  version = "v0.0.45"
+  revision = "fbb31d96891ff0bf1d00c81113a82d48e1b10982"
+  version = "v0.0.46"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -259,6 +278,20 @@
   pruneopts = ""
   revision = "3cd6896122c6ff795bb4b0be1e9fbfe3f931187a"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:1f4cf2447efa67316bd682522a22ca65ad01918cd56b3fe0ebee6290e5c91d68"
+  name = "github.com/nalej/sysinfo"
+  packages = [
+    ".",
+    "internal/pkg/cpuid",
+    "internal/pkg/sysinfo",
+    "internal/pkg/wmi",
+    "version",
+  ]
+  pruneopts = ""
+  revision = "0aac4960d4896a2a782de6e4ce7562fd98c5473a"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"
@@ -559,6 +592,7 @@
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/nalej/infra-net-plugin",
+    "github.com/nalej/sysinfo",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/rs/zerolog",
