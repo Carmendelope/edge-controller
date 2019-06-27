@@ -22,6 +22,8 @@ import (
 
 // SSHType defines the type of connection.
 const SSHType ConnectionType = "ssh"
+// DefaultPort with the default ssh port
+const DefaultPort = "22"
 
 // SSHConnection structure with the information required to establish an SSH connection to a remote host.
 type SSHConnection struct {
@@ -261,7 +263,7 @@ func NewSSHConnection(address, port, username, password, privateKeyFile string, 
 
 	if port == "" {
 		// Default port
-		port = "22"
+		port = DefaultPort
 	}
 
 	if username == "" {
