@@ -6,7 +6,6 @@ package eic
 
 import (
 	"context"
-	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
@@ -93,6 +92,10 @@ func (h *Handler) UninstallAgent(_ context.Context, assetID *grpc_inventory_mana
 }
 
 // InstallAgent triggers the installation of an agent.
-func (h *Handler) InstallAgent(ctx context.Context, in *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
-	return nil, conversions.ToGRPCError(derrors.NewUnimplementedError("not implemented yet"))
+func (h *Handler) InstallAgent(ctx context.Context, request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
+	vErr := entities.ValidInstallAgentRequest(request)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+	return h.Manager.InstallAgent(request)
 }
