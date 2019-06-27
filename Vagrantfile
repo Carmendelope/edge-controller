@@ -6,6 +6,7 @@ Vagrant.configure("2") do |config|
     edge_controller.vm.box = "ubuntu/bionic64"
     edge_controller.vm.network "forwarded_port", guest: 5588, host: 5588
     edge_controller.vm.network "forwarded_port", guest: 5577, host: 5577
+    edge_controller.vm.provision "file", source: "/tmp/joinToken.json", destination: "/tmp/joinToken.json"
     edge_controller.vm.provision "file", source: "../service-net-agent/bin/linux_amd64", destination: "/tmp/agents/linux_amd64"
     edge_controller.vm.provision "file", source: "../service-net-agent/bin/windows_amd64", destination: "/tmp/agents/windows_amd64"
     edge_controller.vm.provision "file", source: "../service-net-agent/bin/darwin_amd64", destination: "/tmp/agents/darwin_amd64"

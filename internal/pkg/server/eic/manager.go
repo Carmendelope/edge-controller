@@ -23,17 +23,17 @@ import (
 
 const CanceledReponseInfo = "Canceled by the System. Agent Uninstalled"
 
-type Manager struct{
-	config config.Config
+type Manager struct {
+	config   config.Config
 	provider asset.Provider
 
 	metricStorageProvider metricstorage.Provider
-	agentInstaller *AgentInstaller
-	notifier *agent.Notifier
+	agentInstaller        *AgentInstaller
+	notifier              *agent.Notifier
 }
 
-func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider, notifier *agent.Notifier) Manager{
-	installer := NewAgentInstaller(notifier)
+func NewManager(cfg config.Config, assetProvider asset.Provider, metricStorageProvider metricstorage.Provider, notifier *agent.Notifier) Manager {
+	installer := NewAgentInstaller(cfg, notifier)
 	return Manager{cfg, assetProvider, metricStorageProvider, installer, notifier}
 }
 
@@ -49,7 +49,7 @@ func (m *Manager) deleteVPNAccount() {
 		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error removing vpn account")
 	}
 
-	err  = vpnHelper.RemoveCredentials()
+	err = vpnHelper.RemoveCredentials()
 	if err != nil {
 		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error deleting credentials")
 	}
@@ -59,7 +59,7 @@ func (m *Manager) deleteVPNAccount() {
 }
 
 // Unlink the receiving EIC.
-func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
+func (m *Manager) Unlink() (*grpc_common_go.Success, error) {
 
 	go m.deleteVPNAccount()
 
@@ -68,10 +68,9 @@ func (m * Manager)Unlink() (*grpc_common_go.Success, error) {
 
 // TriggerAgentOperation registers the operation in the EIC so that the agent will be notified on the
 // next connection.
-func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error){
+func (m *Manager) TriggerAgentOperation(request *grpc_inventory_manager_go.AgentOpRequest) (*grpc_inventory_manager_go.AgentOpResponse, error) {
 
 	log.Info().Interface("request", request).Msg("Triggering agent operation")
-
 
 	// NP-1506. Limit agent operation pending queue on EC
 	ops, err := m.provider.GetPendingOperations(request.AssetId, false)
@@ -91,24 +90,24 @@ func (m * Manager)TriggerAgentOperation(request *grpc_inventory_manager_go.Agent
 	}
 
 	return &grpc_inventory_manager_go.AgentOpResponse{
-		OrganizationId:		request.OrganizationId,
-		EdgeControllerId:	request.EdgeControllerId,
-		AssetId:			request.AssetId,
-		OperationId: 		request.OperationId,
-		Timestamp:			operation.Created,
-		Status:				grpc_inventory_go.OpStatus_SCHEDULED,
-		Info: "",
+		OrganizationId:   request.OrganizationId,
+		EdgeControllerId: request.EdgeControllerId,
+		AssetId:          request.AssetId,
+		OperationId:      request.OperationId,
+		Timestamp:        operation.Created,
+		Status:           grpc_inventory_go.OpStatus_SCHEDULED,
+		Info:             "",
 	}, nil
 }
 
 // Configure changes specific configuration options of the Edge Controller
 // and/or Edge Controller plugins
-func (m * Manager)Configure(request *grpc_inventory_manager_go.ConfigureEICRequest) (*grpc_common_go.Success, error) {
+func (m *Manager) Configure(request *grpc_inventory_manager_go.ConfigureEICRequest) (*grpc_common_go.Success, error) {
 	return nil, nil
 }
 
 // ListMetrics returns available metrics for a certain selection of assets
-func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
+func (m *Manager) ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
 	// TODO: Potentially check if the Organization ID and Edge
 	// Controller ID on the selector matches.
 
@@ -126,7 +125,7 @@ func (m * Manager)ListMetrics(selector *grpc_inventory_manager_go.AssetSelector)
 
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller
-func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error){
+func (m *Manager) QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error) {
 	tagSelector := entities.NewTagSelectorFromGRPC(request.GetAssets())
 	timeRange := entities.NewTimeRangeFromGRPC(request.GetTimeRange())
 	aggrMethod := entities.AggregationMethodFromGRPC(request.GetAggregation())
@@ -144,7 +143,7 @@ func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 
 	// Create result for this asset or aggreagation of assets, for each metric
 	grpcResults := make(map[string]*grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics, len(metrics))
-	for _, metric := range(metrics) {
+	for _, metric := range metrics {
 		metricValues, derr := m.metricStorageProvider.QueryMetric(metric, tagSelector, timeRange, aggrMethod)
 		if derr != nil {
 			return nil, derr
@@ -152,7 +151,7 @@ func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 
 		// Convert the values
 		grpcValues := make([]*grpc_inventory_manager_go.QueryMetricsResult_Value, 0, len(metricValues))
-		for _, value := range(metricValues) {
+		for _, value := range metricValues {
 			grpcValues = append(grpcValues, value.ToGRPC())
 		}
 
@@ -182,7 +181,7 @@ func (m * Manager)QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 }
 
 // CreateAgentJoinToken generates a JoinToken to allow an agent to join to a controller
-func (m * Manager)CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error){
+func (m *Manager) CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error) {
 	token := uuid.NewV4().String()
 
 	tokenInfo, err := m.provider.AddJoinToken(token)
@@ -193,25 +192,23 @@ func (m * Manager)CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeC
 	log.Info().Interface("token", token).Msg("agent join token added")
 
 	return &grpc_inventory_manager_go.AgentJoinToken{
-		OrganizationId: edgeControllerID.OrganizationId,
+		OrganizationId:   edgeControllerID.OrganizationId,
 		EdgeControllerId: edgeControllerID.EdgeControllerId,
-		Token: token,
-		ExpiresOn: tokenInfo.ExpiredOn,
+		Token:            token,
+		ExpiresOn:        tokenInfo.ExpiredOn,
 	}, nil
 
 }
 
 // UninstallAgent operation to uninstall an agent
-func (m *Manager) UninstallAgent( assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
+func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
 
 	// send the message to the notifier
 	m.notifier.UninstallAgent(assetID)
 
-
 	//  remove pending operations and send them as cancelled to the IM.
-
 	pending, err := m.provider.GetPendingOperations(assetID.AssetId, true)
-	if err != nil{
+	if err != nil {
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent uninstalling agent")
 		// In this case the error is not returned to the agent as it cannot do anything.
 		return nil, nil
@@ -219,32 +216,37 @@ func (m *Manager) UninstallAgent( assetID *grpc_inventory_manager_go.FullAssetId
 
 	for _, operation := range pending {
 		err = m.provider.AddOpResponse(entities.AgentOpResponse{
-			Created: time.Now().Unix(),
-			OrganizationId: assetID.OrganizationId,
+			Created:          time.Now().Unix(),
+			OrganizationId:   assetID.OrganizationId,
 			EdgeControllerId: assetID.EdgeControllerId,
-			AssetId: assetID.AssetId,
-			OperationId: operation.OperationId,
-			Timestamp: time.Now().Unix(),
-			Status: grpc_inventory_go.OpStatus_CANCELED.String(),
-			Info: CanceledReponseInfo,
+			AssetId:          assetID.AssetId,
+			OperationId:      operation.OperationId,
+			Timestamp:        time.Now().Unix(),
+			Status:           grpc_inventory_go.OpStatus_CANCELED.String(),
+			Info:             CanceledReponseInfo,
 		})
 		if err != nil {
 			log.Error().Str("trace", err.DebugReport()).Str("edge_controller_id", operation.EdgeControllerId).
-			 Str("asset_id", operation.AssetId).Str("operation_id", operation.OperationId).Msg("cannot add canceled operation")
+				Str("asset_id", operation.AssetId).Str("operation_id", operation.OperationId).Msg("cannot add canceled operation")
 		}
 	}
 
 	return &grpc_common_go.Success{}, nil
 }
 
-func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
+func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error) {
 	// Prepare the data to trigger the async install
 	opID := uuid.NewV4().String()
-	go m.agentInstaller.InstallAgent(opID, request)
+	token := uuid.NewV4().String()
+	tokenInfo, err := m.provider.AddJoinToken(token)
+	if err != nil {
+		return nil, err
+	}
+	go m.agentInstaller.InstallAgent(opID, tokenInfo.Token, request)
 	response := &grpc_inventory_manager_go.InstallAgentResponse{
-		OrganizationId:       request.OrganizationId,
-		EdgeControllerId:     request.EdgeControllerId,
-		OperationId:          opID,
+		OrganizationId:   request.OrganizationId,
+		EdgeControllerId: request.EdgeControllerId,
+		OperationId:      opID,
 	}
 	return response, nil
 }

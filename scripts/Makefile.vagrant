@@ -13,6 +13,7 @@ vagrant-destroy:
 
 vagrant-restart-service:
 	@echo ">>> Restarting edge-controller service inside the VM"
+	@vagrant ssh -c "sudo systemctl daemon-reload"
 	@vagrant ssh -c "sudo systemctl restart edge-controller.service"
 
 vagrant: dep build-custom vagrant-up

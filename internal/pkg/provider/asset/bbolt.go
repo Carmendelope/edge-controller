@@ -6,7 +6,6 @@ import (
 	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/edge-controller/internal/pkg/provider/database"
-	"github.com/nalej/grpc-utils/pkg/conversions"
 	bolt "go.etcd.io/bbolt"
 	"sync"
 	"time"
@@ -84,7 +83,7 @@ func (b *BboltAssetProvider) AddPendingOperation(op entities.AgentOpRequest) der
 
 			toAddBytes, err := json.Marshal(obj)
 			if err != nil {
-				return conversions.ToDerror(err)
+				return derrors.AsError(err, "cannot marshal entity")
 			}
 			if err := bk.Put([]byte (op.AssetId), toAddBytes); err != nil {
 				return derrors.NewInternalError("Cannot add new element")
@@ -436,7 +435,7 @@ func (b *BboltAssetProvider) AddManagedAsset(asset entities.AgentJoinInfo) derro
 
 		toAddBytes, err := json.Marshal(asset)
 		if err != nil {
-			return conversions.ToDerror(err)
+			return derrors.AsError(err, "cannot marshal entity")
 		}
 
 		// add the asset in assetsByAssetIDBucket bucket

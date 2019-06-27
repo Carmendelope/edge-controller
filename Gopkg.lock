@@ -213,20 +213,20 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:93e6da6d334ad56d2a262a0016292cbc896592d7260c57098d13fea1c586a7b5"
+  digest = "1:f6b6a7064193c848a876eeaa66b7cb71ac8f18138a33d567145344d44ead81b5"
   name = "github.com/nalej/grpc-inventory-go"
   packages = ["."]
   pruneopts = ""
-  revision = "a0dc962bed5723b36a09c1bb28d41d4d1d50e562"
-  version = "v0.0.25"
+  revision = "b61711830734e6a5d79d5e8679e1507373873d0d"
+  version = "v0.0.27"
 
 [[projects]]
-  digest = "1:e802d5b93ef69fcae199683c6c57e78277438bf89761ff2f00a0d0416900a5fd"
+  digest = "1:86e9e235e71717991019737c96d7455cafba64f05b9467a25103c78f3c63c568"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "c4079310ade76d1627242730a76253c8830180a2"
-  version = "v0.0.45"
+  revision = "08ea2a2664c46bee46cbd50089ab41752ffd4489"
+  version = "v0.0.49"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -259,14 +259,6 @@
   pruneopts = ""
   revision = "3cd6896122c6ff795bb4b0be1e9fbfe3f931187a"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:a91d46ca072eed54599a32993a893e487b3d3e2be0dfb12e2a080c7564b2cc3c"
-  name = "github.com/nalej/service-net-agent"
-  packages = ["pkg/plugin"]
-  pruneopts = ""
-  revision = "ada8cd2d7940fc9deaf3fd31521367527a755a01"
 
 [[projects]]
   digest = "1:a3735b0978a8b53fc2ac97a6f46ca1189f0712a00df86d6ec4cf26c1a25e6d77"
@@ -406,6 +398,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:90722da867436e04650b8491e5d9f690aeb2a4e305d548666bdd541d68d6cdbd"
+  name = "golang.org/x/crypto"
+  packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
+    "poly1305",
+    "ssh",
+  ]
+  pruneopts = ""
+  revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
+
+[[projects]]
+  branch = "master"
   digest = "1:5c6b8395efd72ad4250b7747e2b1a0683c3edb7b0346a938ff45240c7ec53691"
   name = "golang.org/x/net"
   packages = [
@@ -427,7 +435,10 @@
   branch = "master"
   digest = "1:0cc6f08b513a8ae7ee7d5edfb89c528224c8f64cbd5d7587c9c758f9fab9dba2"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "cpu",
+    "unix",
+  ]
   pruneopts = ""
   revision = "c5567b49c5d04a5f83870795b8c0e2df43a8ce32"
 
@@ -567,7 +578,6 @@
     "github.com/nalej/grpc-inventory-manager-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/nalej/infra-net-plugin",
-    "github.com/nalej/service-net-agent/pkg/plugin",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/rs/zerolog",
@@ -576,6 +586,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "go.etcd.io/bbolt",
+    "golang.org/x/crypto/ssh",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/credentials",
