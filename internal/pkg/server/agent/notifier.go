@@ -132,6 +132,37 @@ func (n *Notifier) sendPendingResponses() {
 
 }
 
+// sendPendingECResponses get all pending edge-controller responses and send them to management cluster
+func (n *Notifier) sendPendingECResponses() {
+	log.Debug().Msg("sending pending edge-controller responses")
+	// get pending EC responses from database.
+	pendingRes, err := n.provider.GetPendingECOpResponses(true)
+	if err != nil {
+		log.Warn().Str("error", err.DebugReport()).Msg("error getting pending edge-controller operation responses")
+		return
+	}
+
+	log.Debug().Int("pending len", len(pendingRes)).Msg("pending responses")
+
+	for _, res := range pendingRes {
+
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		_, err := n.mngtClient.CallbackECOperation(ctx, res.ToGRPC())
+		cancel()
+
+		if err != nil {
+			log.Warn().Str("operation_id", res.OperationId).Str("error", conversions.ToDerror(err).DebugReport()).
+				Msg("error sending Edge-controller response")
+			// store again in the pending op responses
+			errAdd := n.provider.AddECOpResponse(res)
+			if errAdd != nil{
+				log.Warn().Str("operation_id", res.OperationId).Msg("storing the edge-controller response")
+			}
+		}
+	}
+
+}
+
 func (n *Notifier) sendPendingUninstallMessages() bool {
 
 	for _, msg := range n.assetUninstalled {
@@ -175,6 +206,10 @@ func (n *Notifier) notifyManagementCluster() {
 			delete(n.assetUninstalled, k)
 		}
 	}
+
+	// send EcResponses messages to management cluster
+	n.sendPendingECResponses()
+
 }
 
 func (n * Notifier) NotifyAgentStart(start * grpc_inventory_manager_go.AgentStartInfo) derrors.Error{
