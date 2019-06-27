@@ -142,6 +142,8 @@ func (n *Notifier) sendPendingECResponses() {
 		return
 	}
 
+	log.Debug().Int("pending len", len(pendingRes)).Msg("pending responses")
+
 	for _, res := range pendingRes {
 
 		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
