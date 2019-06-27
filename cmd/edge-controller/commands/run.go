@@ -69,7 +69,6 @@ func init() {
 	runCmd.Flags().StringVar(&cfg.Geolocation, "geolocation", "", "Edge Controller Geolocation")
 	runCmd.Flags().StringVar(&cfg.AgentBinaryPath, "agentBinaryPath", "/opt/agents", "Agents binary path as <os_arch>/service-net-agent")
 
-
 	configHelper.BindPFlag("port", runCmd.Flags().Lookup("port"))
 	configHelper.BindPFlag("agentPort", runCmd.Flags().Lookup("agentPort"))
 	configHelper.BindPFlag("notifyPeriod", runCmd.Flags().Lookup("notifyPeriod"))

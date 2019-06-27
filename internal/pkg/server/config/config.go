@@ -94,7 +94,10 @@ func (conf * Config) Validate() derrors.Error {
 	if conf.AlivePeriod.Seconds() < 1 {
 		return derrors.NewInvalidArgumentError("alivePeriod should be minimum 1s")
 	}
-	if conf.AgentBinaryPath == ""{
+	if conf.JoinTokenPath == "" {
+		return derrors.NewAlreadyExistsError("jointokenpath must be specified")
+  }
+	if conf.AgentBinaryPath == "" {
 		return derrors.NewInvalidArgumentError("agentBinaryPath must be set")
 	}
 
