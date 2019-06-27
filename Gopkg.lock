@@ -232,20 +232,20 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:93e6da6d334ad56d2a262a0016292cbc896592d7260c57098d13fea1c586a7b5"
+  digest = "1:f6b6a7064193c848a876eeaa66b7cb71ac8f18138a33d567145344d44ead81b5"
   name = "github.com/nalej/grpc-inventory-go"
   packages = ["."]
   pruneopts = ""
-  revision = "a0dc962bed5723b36a09c1bb28d41d4d1d50e562"
-  version = "v0.0.25"
+  revision = "b61711830734e6a5d79d5e8679e1507373873d0d"
+  version = "v0.0.27"
 
 [[projects]]
-  digest = "1:093309473e6dc820f83b0efdd4c424aa4393e13d585ed0d159322c3aec818f71"
+  digest = "1:86e9e235e71717991019737c96d7455cafba64f05b9467a25103c78f3c63c568"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "fbb31d96891ff0bf1d00c81113a82d48e1b10982"
-  version = "v0.0.46"
+  revision = "08ea2a2664c46bee46cbd50089ab41752ffd4489"
+  version = "v0.0.49"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -431,6 +431,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:90722da867436e04650b8491e5d9f690aeb2a4e305d548666bdd541d68d6cdbd"
+  name = "golang.org/x/crypto"
+  packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
+    "poly1305",
+    "ssh",
+  ]
+  pruneopts = ""
+  revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
+
+[[projects]]
+  branch = "master"
   digest = "1:5c6b8395efd72ad4250b7747e2b1a0683c3edb7b0346a938ff45240c7ec53691"
   name = "golang.org/x/net"
   packages = [
@@ -450,11 +466,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0cc6f08b513a8ae7ee7d5edfb89c528224c8f64cbd5d7587c9c758f9fab9dba2"
+  digest = "1:2579a16d8afda9c9a475808c13324f5e572852e8927905ffa15bb14e71baba4f"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "cpu",
+    "unix",
+  ]
   pruneopts = ""
-  revision = "c5567b49c5d04a5f83870795b8c0e2df43a8ce32"
+  revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
 
 [[projects]]
   digest = "1:740b51a55815493a8d0f2b1e0d0ae48fe48953bf7eaf3fcc4198823bf67768c0"
@@ -495,7 +514,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c8da13f7b31f072cc7f75964fcf2d61c731a055fe9f19429c0c517e8e1880197"
+  digest = "1:af8468becde607c9f94e9c659db247748f68907b7058a1b6104be5163fd1a581"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
@@ -505,7 +524,7 @@
     "protobuf/field_mask",
   ]
   pruneopts = ""
-  revision = "6af8c5fc6601ab6b41cd32742a65ce2f5bd9db57"
+  revision = "989357319d63150615221e52d4addd4b7933fd91"
 
 [[projects]]
   digest = "1:6881653b963cd12dc1a9824aed5e122d0ff38e53e3ee07862f969a56ad2f2e9c"
@@ -601,6 +620,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "go.etcd.io/bbolt",
+    "golang.org/x/crypto/ssh",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/credentials",
