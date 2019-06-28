@@ -201,8 +201,9 @@ func (m *Manager) CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeC
 }
 
 // UninstallAgent operation to uninstall an agent
-func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
+func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_common_go.Success, error) {
 
+	// TODO: check what happens if a 'forced uninstall' message is received and before the token is deleted the agent connects
 	// send the message to the notifier
 	m.notifier.UninstallAgent(assetID)
 
@@ -228,6 +229,17 @@ func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId)
 		if err != nil {
 			log.Error().Str("trace", err.DebugReport()).Str("edge_controller_id", operation.EdgeControllerId).
 				Str("asset_id", operation.AssetId).Str("operation_id", operation.OperationId).Msg("cannot add canceled operation")
+		}
+	}
+
+	// TODO: maybe it would be better to erase the asset first of all
+
+	// if the uninstalling is forced, the agent is deleted directly,
+	// the edge controller does not wait for it to send a message
+	if assetID.Force{
+		err := m.provider.RemoveManagedAsset(assetID.AssetId)
+		if err != nil {
+			log.Warn().Str("assetID", assetID.AssetId).Str("trace", err.DebugReport()).Msg("error removing agent")
 		}
 	}
 

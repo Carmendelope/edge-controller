@@ -233,13 +233,19 @@ func (n * Notifier) NotifyCallback(response * grpc_inventory_manager_go.AgentOpR
 	return nil
 }
 
-func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId) derrors.Error {
+func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest) derrors.Error {
 
 	n.Lock()
 	defer n.Unlock()
 
-	// add the assetID in AssetUninstall map
-	n.assetUninstall[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+	if assetID.Force{
+		// if the uninstalling is forced, the agent is deleted directly,
+		// the agent is been saved in assetUninstalled map
+		n.assetUninstalled[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+	}else {
+		// add the assetID in AssetUninstall map
+		n.assetUninstall[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+	}
 
 	// remove all the entries
 	delete (n.assetAlive, assetID.AssetId)
@@ -250,7 +256,7 @@ func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId
 }
 
 // PendingInstall check if a message has been sent to uninstall this agent
-func (n *Notifier) PendingInstall(assetId string) (bool, entities.FullAssetId) {
+func (n *Notifier) PendingUnInstall(assetId string) (bool, entities.FullAssetId) {
 	n.Lock()
 	defer n.Unlock()
 
