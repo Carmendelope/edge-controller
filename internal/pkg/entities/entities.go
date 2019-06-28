@@ -263,7 +263,7 @@ func ValidAgentOpRequest (request *grpc_inventory_manager_go.AgentOpRequest) der
 	return nil
 }
 
-// FullAssetId
+// FullAssetID
 type FullAssetId struct {
 	// OrganizationId with the organization identifier.
 	OrganizationId string `json:"organization_id,omitempty"`
@@ -273,7 +273,7 @@ type FullAssetId struct {
 	AssetId              string   `json:"asset_id,omitempty"`
 }
 
-func NewFullAssetIdFromGRPC(assetID * grpc_inventory_manager_go.FullAssetId) * FullAssetId{
+func NewFullAssetIdFromGRPC(assetID * grpc_inventory_manager_go.FullUninstallAgentRequest) * FullAssetId{
 	return &FullAssetId{
 		OrganizationId:   assetID.OrganizationId,
 		EdgeControllerId: assetID.EdgeControllerId,
@@ -281,16 +281,19 @@ func NewFullAssetIdFromGRPC(assetID * grpc_inventory_manager_go.FullAssetId) * F
 	}
 }
 
-func (fa * FullAssetId) ToGRPC() * grpc_inventory_manager_go.FullAssetId{
-	return &grpc_inventory_manager_go.FullAssetId{
+/*
+func (fa * FullAssetID) ToGRPC() * grpc_inventory_manager_go.FullUninstallAgentRequest{
+
+	return &grpc_inventory_manager_go.FullUninstallAgentRequest{
 		OrganizationId:       fa.OrganizationId,
 		EdgeControllerId:     fa.EdgeControllerId,
 		AssetId:              fa.AssetId,
 
 	}
 }
+*/
 
-func ValidFullAssetID (request *grpc_inventory_manager_go.FullAssetId) derrors.Error {
+func ValidFullUninstallAgentRequest (request *grpc_inventory_manager_go.FullUninstallAgentRequest) derrors.Error {
 	if request.OrganizationId == "" {
 		return derrors.NewInvalidArgumentError("organization_id cannot be empty")
 	}

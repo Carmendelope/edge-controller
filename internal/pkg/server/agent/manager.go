@@ -89,7 +89,7 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 	// TODO: Verify clock sync
 	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
 
-	exists, asset := m.notifier.PendingInstall(request.AssetId)
+	exists, asset := m.notifier.PendingUnInstall(request.AssetId)
 	// verify if this agent is pending to be uninstalled
 	if exists{
 
