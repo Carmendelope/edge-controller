@@ -16,7 +16,6 @@ import (
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
-	"github.com/satori/go.uuid"
 	"time"
 )
 
@@ -163,13 +162,13 @@ func (m *Manager) RemoveAgent(request entities.FullAssetId) derrors.Error{
 }
 
 // SendUninstallMessageToAgent operation to send a message to an agent to inform it is going to be uninstalled
-func (m *Manager) SendUninstallMessageToAgent (request entities.FullAssetId) (*grpc_edge_controller_go.CheckResult, derrors.Error){
+func (m *Manager) SendUninstallMessageToAgent (request entities.UninstallAgentRequest) (*grpc_edge_controller_go.CheckResult, derrors.Error){
 
 	result := []*grpc_inventory_manager_go.AgentOpRequest{{
 		OrganizationId: request.OrganizationId,
 		EdgeControllerId: request.EdgeControllerId,
 		AssetId: request.AssetId,
-		OperationId: uuid.NewV4().String(),
+		OperationId: request.OperationId,
 		Operation: UninstallOp,
 		Plugin: CorePluging,
 	}}

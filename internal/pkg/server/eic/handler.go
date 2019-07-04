@@ -80,7 +80,7 @@ func (h *Handler)CreateAgentJoinToken(_ context.Context, edgeControllerID *grpc_
 }
 
 // UninstallAgent operation to uninstall an agent
-func (h *Handler) UninstallAgent(_ context.Context, request *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_common_go.Success, error) {
+func (h *Handler) UninstallAgent(_ context.Context, request *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error) {
 	log.Debug().Interface("edgeControllerID", request.EdgeControllerId).Str("assetID", request.AssetId).Bool("force", request.Force).Msg("uninstall agent")
 
 	vErr := entities.ValidFullUninstallAgentRequest(request)
@@ -92,7 +92,7 @@ func (h *Handler) UninstallAgent(_ context.Context, request *grpc_inventory_mana
 }
 
 // InstallAgent triggers the installation of an agent.
-func (h *Handler) InstallAgent(ctx context.Context, request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
+func (h *Handler) InstallAgent(ctx context.Context, request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error){
 	vErr := entities.ValidInstallAgentRequest(request)
 	if vErr != nil {
 		return nil, conversions.ToGRPCError(vErr)
