@@ -35,9 +35,9 @@ type Notifier struct {
 	// edgeControllerID with de EIC identifier
 	edgeControllerID string
 	//AssetUninstall is a map of asset identifiers whose are pending to be uninstalled
-	assetUninstall map[string]entities.FullAssetId
+	assetUninstall map[string]entities.UninstallAgentRequest
 	// AssetUninstalled is a map of asset identifiers whose are uninstalled and they are pending to be sent to management cluster
-	assetUninstalled map[string] entities.FullAssetId
+	assetUninstalled map[string] entities.UninstallAgentRequest
 }
 
 func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient,
@@ -51,8 +51,8 @@ func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient
 		mngtClient: mngtClient,
 		organizationID: organizationID,
 		edgeControllerID: edgeControllerID,
-		assetUninstall: make (map[string]entities.FullAssetId,0),
-		assetUninstalled: make (map[string]entities.FullAssetId,0),
+		assetUninstall: make (map[string]entities.UninstallAgentRequest,0),
+		assetUninstalled: make (map[string]entities.UninstallAgentRequest,0),
 	}
 }
 
@@ -170,7 +170,9 @@ func (n *Notifier) sendPendingUninstallMessages() bool {
 
 		_, err := n.mngtClient.AgentUninstalled(ctx, &grpc_inventory_go.AssetUninstalledId{
 			OrganizationId: msg.OrganizationId,
+			EdgeControllerId: msg.EdgeControllerId,
 			AssetId: msg.AssetId,
+			OperationId: msg.OperationId,
 		})
 		cancel()
 		if err != nil {
@@ -233,7 +235,7 @@ func (n * Notifier) NotifyCallback(response * grpc_inventory_manager_go.AgentOpR
 	return nil
 }
 
-func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest) derrors.Error {
+func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest, opID string) derrors.Error {
 
 	n.Lock()
 	defer n.Unlock()
@@ -241,10 +243,10 @@ func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninsta
 	if assetID.Force{
 		// if the uninstalling is forced, the agent is deleted directly,
 		// the agent is been saved in assetUninstalled map
-		n.assetUninstalled[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+		n.assetUninstalled[assetID.AssetId] = *entities.NewUninstallAgentRequestFromGRPC(assetID, opID)
 	}else {
 		// add the assetID in AssetUninstall map
-		n.assetUninstall[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+		n.assetUninstall[assetID.AssetId] = *entities.NewUninstallAgentRequestFromGRPC(assetID, opID)
 	}
 
 	// remove all the entries
@@ -256,7 +258,7 @@ func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninsta
 }
 
 // PendingInstall check if a message has been sent to uninstall this agent
-func (n *Notifier) PendingUnInstall(assetId string) (bool, entities.FullAssetId) {
+func (n *Notifier) PendingUnInstall(assetId string) (bool, entities.UninstallAgentRequest) {
 	n.Lock()
 	defer n.Unlock()
 

@@ -21,7 +21,9 @@ import (
 	"time"
 )
 
-const CanceledReponseInfo = "Canceled by the System. Agent Uninstalled"
+const CanceledResponseInfo = "Canceled by the System. Agent Uninstalled"
+const InstallResponseInfo  = "Agent Install"
+const UninstallResponseInfo = "Agent Uninstall"
 
 type Manager struct {
 	config   config.Config
@@ -201,11 +203,12 @@ func (m *Manager) CreateAgentJoinToken(edgeControllerID *grpc_inventory_go.EdgeC
 }
 
 // UninstallAgent operation to uninstall an agent
-func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_common_go.Success, error) {
+func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error) {
 
 	// TODO: check what happens if a 'forced uninstall' message is received and before the token is deleted the agent connects
 	// send the message to the notifier
-	m.notifier.UninstallAgent(assetID)
+	operationID := uuid.NewV4().String()
+	m.notifier.UninstallAgent(assetID, operationID)
 
 	//  remove pending operations and send them as cancelled to the IM.
 	pending, err := m.provider.GetPendingOperations(assetID.AssetId, true)
@@ -224,7 +227,7 @@ func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstal
 			OperationId:      operation.OperationId,
 			Timestamp:        time.Now().Unix(),
 			Status:           grpc_inventory_go.OpStatus_CANCELED.String(),
-			Info:             CanceledReponseInfo,
+			Info:             CanceledResponseInfo,
 		})
 		if err != nil {
 			log.Error().Str("trace", err.DebugReport()).Str("edge_controller_id", operation.EdgeControllerId).
@@ -243,10 +246,18 @@ func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstal
 		}
 	}
 
-	return &grpc_common_go.Success{}, nil
+	return &grpc_inventory_manager_go.EdgeControllerOpResponse{
+		OrganizationId: assetID.OrganizationId,
+		EdgeControllerId: assetID.EdgeControllerId,
+		OperationId: operationID,
+		Status: grpc_inventory_go.OpStatus_SCHEDULED,
+		Timestamp: time.Now().Unix(),
+		Info: UninstallResponseInfo,
+
+	}, nil
 }
 
-func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error) {
+func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error) {
 	// Prepare the data to trigger the async install
 	opID := uuid.NewV4().String()
 	token := uuid.NewV4().String()
@@ -255,10 +266,13 @@ func (m *Manager) InstallAgent(request *grpc_inventory_manager_go.InstallAgentRe
 		return nil, err
 	}
 	go m.agentInstaller.InstallAgent(opID, tokenInfo.Token, request)
-	response := &grpc_inventory_manager_go.InstallAgentResponse{
-		OrganizationId:   request.OrganizationId,
-		EdgeControllerId: request.EdgeControllerId,
-		OperationId:      opID,
+	response := &grpc_inventory_manager_go.EdgeControllerOpResponse{
+		OrganizationId:		request.OrganizationId,
+		EdgeControllerId:	request.EdgeControllerId,
+		OperationId:      	opID,
+		Status:           	grpc_inventory_go.OpStatus_INPROGRESS,
+		Timestamp: 		 	time.Now().Unix(),
+		Info: 				InstallResponseInfo,
 	}
 	return response, nil
 }
