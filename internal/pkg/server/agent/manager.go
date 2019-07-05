@@ -39,6 +39,12 @@ func NewManager(cfg config.Config, assetProvider asset.Provider, notifier Notifi
 func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) (*grpc_inventory_manager_go.AgentJoinResponse, derrors.Error) {
 	log.Debug().Str("agentID", request.AgentId).Msg("agent request join")
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+
+	agentLocation := m.config.Geolocation
+	if request.Geolocation != ""{
+		agentLocation = request.Geolocation
+	}
+
 	defer cancel()
 	toSend := &grpc_inventory_manager_go.AgentJoinRequest{
 		OrganizationId:       m.config.OrganizationId,
@@ -48,6 +54,7 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 		Os:                   request.Os,
 		Hardware:             request.Hardware,
 		Storage:              request.Storage,
+		Geolocation:          agentLocation,
 	}
 	response, err := m.managementClient.AgentJoin(ctx, toSend)
 	if err != nil{

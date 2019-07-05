@@ -20,7 +20,7 @@
 
 [[constraint]]
     name="github.com/nalej/grpc-inventory-manager-go"
-    version="=v0.0.52"
+    version="=v0.0.53"
 
 [[constraint]]
     name="github.com/nalej/grpc-edge-inventory-proxy-go"
@@ -28,7 +28,7 @@
 
 [[constraint]]
     name="github.com/nalej/grpc-edge-controller-go"
-    version="=v0.0.16"
+    version="=v0.0.17"
 
 [[constraint]]
      name="github.com/nalej/grpc-inventory-go"
