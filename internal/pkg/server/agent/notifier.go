@@ -38,6 +38,8 @@ type Notifier struct {
 	assetUninstall map[string]entities.UninstallAgentRequest
 	// AssetUninstalled is a map of asset identifiers whose are uninstalled and they are pending to be sent to management cluster
 	assetUninstalled map[string] entities.UninstallAgentRequest
+
+	mngLoopTicker *time.Ticker
 }
 
 func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient,
@@ -77,9 +79,18 @@ func (n *Notifier) AgentAlive(assetID string, ip string) {
 
 // LaunchNotifierLoop is intended to be launched as goroutine for periodically sending data back to the management cluster.
 func (n *Notifier) LaunchNotifierLoop() {
-	ticker := time.NewTicker(n.notifyPeriod)
-	for range ticker.C {
+	log.Info().Msg("Launching Notifier Loop")
+	n.mngLoopTicker = time.NewTicker(n.notifyPeriod)
+	for range n.mngLoopTicker.C {
 		n.notifyManagementCluster()
+	}
+}
+
+func (n *Notifier) StopNotifierLoop() {
+	if n.mngLoopTicker != nil {
+		log.Info().Msg("Stopping Notifier Loop")
+		n.mngLoopTicker.Stop()
+		
 	}
 }
 
