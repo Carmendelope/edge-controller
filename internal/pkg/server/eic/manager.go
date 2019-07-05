@@ -39,7 +39,8 @@ func NewManager(cfg config.Config, assetProvider asset.Provider, metricStoragePr
 	return Manager{cfg, assetProvider, metricStorageProvider, installer, notifier}
 }
 
-func (m *Manager) deleteVPNAccount() {
+// unlinkEC removes VPN Client and credentials file
+func (m *Manager) unlinkEC() {
 
 	vpnHelper, err := helper.NewJoinHelper(m.config.JoinTokenPath, m.config.EicApiPort)
 	if err != nil {
@@ -56,6 +57,10 @@ func (m *Manager) deleteVPNAccount() {
 		log.Warn().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error deleting credentials")
 	}
 
+	m.notifier.StopNotifierLoop()
+
+	log.Info().Str("EC", m.config.EdgeControllerId).Msg("unlinked")
+
 	// TODO: send a deletevpnUser to vpn-server
 
 }
@@ -63,7 +68,12 @@ func (m *Manager) deleteVPNAccount() {
 // Unlink the receiving EIC.
 func (m *Manager) Unlink() (*grpc_common_go.Success, error) {
 
-	go m.deleteVPNAccount()
+	err := m.provider.Clear()
+	if err != nil {
+		log.Warn().Str("err", err.DebugReport()).Msg("error clearing database")
+	}
+
+	go m.unlinkEC()
 
 	return &grpc_common_go.Success{}, nil
 }

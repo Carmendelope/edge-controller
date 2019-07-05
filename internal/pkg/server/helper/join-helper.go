@@ -317,13 +317,6 @@ func (j * JoinHelper) DeleteLocalVPN () error {
 		log.Info().Str("error", err.Error()).Msg("error deleting account")
 	}
 
-	// RemoveCredentialsFile
-	err = j.RemoveCredentials()
-	if err != nil {
-		log.Info().Str("error", err.Error()).Msg("error deleting credentials file")
-	}
-
-
 	return nil
 }
 
@@ -378,8 +371,6 @@ func (j * JoinHelper) SaveCredentials(edge grpc_inventory_manager_go.EICJoinResp
 // LoadCredentials load vpn credentials from a file
 func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResponse, error) {
 
-	log.Info().Msg("loading credentials")
-
 	credentialsFile, err := ioutil.ReadFile(CredentialsFile)
 	if err != nil {
 		return nil, err
@@ -399,8 +390,10 @@ func (j * JoinHelper) LoadCredentials() (* grpc_inventory_manager_go.EICJoinResp
 func (j *JoinHelper) RemoveCredentials() error {
 	remCmd := fmt.Sprintf("rm %s", CredentialsFile)
 	cmd := exec.Command("/bin/sh", "-c", remCmd)
+
 	err := cmd.Run()
 	if err != nil {
+		log.Error().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error removing credentials")
 		return err
 	}
 	return nil
