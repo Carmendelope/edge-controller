@@ -225,7 +225,7 @@ func (m *Manager) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstal
 	if err != nil {
 		log.Error().Str("trace", err.DebugReport()).Msg("cannot retrieve pending operations for an agent uninstalling agent")
 		// In this case the error is not returned to the agent as it cannot do anything.
-		return nil, nil
+		return nil, err
 	}
 
 	for _, operation := range pending {
