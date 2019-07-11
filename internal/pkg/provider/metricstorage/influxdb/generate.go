@@ -66,17 +66,25 @@ var derivativeMetric = map[string]bool{
 // Also, I _just_ found out about Flux, which might be a much more suitable
 // query language for our purpose...
 func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *entities.TimeRange, aggr entities.AggregationMethod) (string, derrors.Error) {
-	// If we want a single point in time, we set resolution to 60s. This
-	// means we get values for all assets in a 60s window. This might not
-	// be the most precise, but if we make this window smaller we might
-	// end up not aggregating over all assets.
-	// Note that this also means that if an asset doesn't send metrics for
-	// more than 60s, its values will not be included in the average. That
-	// is probably reasonable, because at that moment the asset is probably
-	// not available.
-	if !timeRange.Timestamp.IsZero() {
-		timeRange.Resolution = time.Second * defaultMetricsWindow
-	}
+	// We at first use a time window of 60s to aggregate over. Once
+	// we've done all our calculations, we apply the requested
+	// window. We do this so the averages over a time range are
+	// correct with respect to the time when assets where alive.
+	// An example:
+	// - Asset A is alive from t1-t2, average for metric M is x
+	// - Asset B is alive from t2-t3, average for metric M is y
+	// If we want to know the sum of a metric, averaged over t1-t3
+	// and we use GROUP BY time(0), we would calculate the average
+	// for A and for B, then add the two. We would think that
+	// the sum of the average of metric M is (x+y) over t1-t3.
+	// However, the sum of the average is x for t1-t2 (because
+	// B was not alive), and y for t2-t3. So for t1-t3 it should
+	// be ( (x+0) * (t1-t2) + (0+y) * (t2-t3) ) / (t1-t4).
+	// We can get to this if we first group over a default window
+	// and do our sum per time window, and in the end apply our
+	// requested window (or 0 if we want the average over a time
+	// period).
+	resolution := time.Second * defaultMetricsWindow
 
 	// Determine what to select from. Mostly just a measurement,
 	// but sometimes (e.g., for CPU), we do some pre-processing
@@ -116,7 +124,7 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 	sumTag, found := sumTags[metric]
 	if found {
 		newSelector := "summed_metric"
-		innerGroupBy := groupByClause(timeRange.Resolution, "asset_id", sumTag)
+		innerGroupBy := groupByClause(resolution, "asset_id", sumTag)
 		selectClause = fmt.Sprintf("%s %s", selectClause, innerGroupBy)
 		selectClause = fmt.Sprintf("%s FROM (%s)",
 			selectFromFuncFieldAs("sum", selector, newSelector),
@@ -127,23 +135,41 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 
 	// Add time and asset grouping. A resolution of 0 aggregates over
 	// complete time range and returns a single value per asset
-	selectClause = fmt.Sprintf("%s %s", selectClause, groupByClause(timeRange.Resolution, "asset_id"))
+	selectClause = fmt.Sprintf("%s %s", selectClause, groupByClause(resolution, "asset_id"))
 
-	// Aggregate over assets. If we have a single asset this is a no-op
+
+	// Aggregate over assets. If we have a single asset this is a no-op.
 	if aggr != entities.AggregateNone {
 		newSelector := "aggr_metric"
 		selectClause = fmt.Sprintf("%s FROM (%s) %s",
 			selectFromFuncFieldAs(aggr.String(), selector, newSelector),
 			selectClause,
-			groupByClause(timeRange.Resolution),
+			groupByClause(resolution),
 		)
 		selector = newSelector
 	}
 
 	// Now that we've summed and aggregated by asset, we can limit the
-	// result for a single point in time
+	// result for a single point in time. We will always keep the resolution
+	// at 60s. This means we get values for all assets in a 60s window.
+	// This might not be the most precise, but if we make this window
+	// smaller we might end up not aggregating over all assets.
+	// Note that this also means that if an asset doesn't send metrics for
+	// more than 60s, its values will not be included in the average. That
+	// is probably reasonable, because at that moment the asset is probably
+	// not available.
 	if !timeRange.Timestamp.IsZero() {
 		selectClause = fmt.Sprintf("SELECT last(%s) FROM (%s)", selector, selectClause)
+	} else if resolution != timeRange.Resolution {
+		// If we used a different time window for aggregation than requested,
+		// now is the time to aggregate over the requested window
+		newSelector := "window_metric"
+		selectClause = fmt.Sprintf("%s FROM (%s) %s",
+			selectFromFuncFieldAs("mean", selector, newSelector),
+			selectClause,
+			groupByClause(timeRange.Resolution),
+		)
+		selector = newSelector
 	}
 
 	return selectClause, nil
