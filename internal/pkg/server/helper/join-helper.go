@@ -55,26 +55,8 @@ type JoinHelper struct {
 // NewJoinHelper returns a JoinHelper to manage all the join and credentials actions
 func NewJoinHelper (configFile string, port int) (*JoinHelper, error) {
 
-	var eicToken grpc_inventory_manager_go.EICJoinToken
-
-	jsonFile, err := os.Open(configFile)
-	if err != nil {
-		return nil, err
-	}
-	log.Debug().Str("tokenFile", configFile).Msg("Successfully Opened")
-	defer jsonFile.Close()
-
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
-	err = json.Unmarshal(byteValue, &eicToken)
-	if err != nil {
-		log.Error().Str("err", conversions.ToDerror(err).DebugReport()).Msg("error Unmarshalling joinTokenFile")
-		return nil, err
-	}
-
 	return &JoinHelper{
 		JoinTokenFile: configFile,
-		EicToken: eicToken,
 		JoinPort: port,
 	}, nil
 }
@@ -139,6 +121,11 @@ func (j * JoinHelper) NeedJoin () (bool, error) {
 
 // Join calls eic-api to join de EIC
 func (j * JoinHelper) Join (name string, labels string, geolocation string) (*grpc_inventory_manager_go.EICJoinResponse, error){
+	// Load JoinToken
+	loadErr := j.LoadTokenFile()
+	if loadErr != nil {
+		return nil, conversions.ToGRPCError(loadErr)
+	}
 	log.Info().Msg("Join edge controller")
 	ctx, cancel := j.getContext(DefaultTimeout)
 	defer cancel()
@@ -283,6 +270,13 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 		log.Warn().Str("error", err.Error()).Msg("error creating password")
 	}
 
+	// AccountStartupSet
+	cmd = exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, "AccountStartupSet", credentials.Username)
+	err = cmd.Run()
+	if err != nil {
+		log.Warn().Str("error", err.Error()).Msg("error setting startup")
+	}
+	// Account connect
 	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, "accountConnect", credentials.Username)
 	err = cmd.Run()
 	if err != nil {
