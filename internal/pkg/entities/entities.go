@@ -281,18 +281,6 @@ func NewFullAssetIdFromGRPC(assetID * grpc_inventory_manager_go.FullUninstallAge
 	}
 }
 
-/*
-func (fa * FullAssetID) ToGRPC() * grpc_inventory_manager_go.FullUninstallAgentRequest{
-
-	return &grpc_inventory_manager_go.FullUninstallAgentRequest{
-		OrganizationId:       fa.OrganizationId,
-		EdgeControllerId:     fa.EdgeControllerId,
-		AssetId:              fa.AssetId,
-
-	}
-}
-*/
-
 func ValidFullUninstallAgentRequest (request *grpc_inventory_manager_go.FullUninstallAgentRequest) derrors.Error {
 	if request.OrganizationId == "" {
 		return derrors.NewInvalidArgumentError("organization_id cannot be empty")
@@ -355,4 +343,28 @@ func ValidInstallAgentRequest(request *grpc_inventory_manager_go.InstallAgentReq
 		return derrors.NewInvalidArgumentError("target_host cannot be empty")
 	}
 	return nil
+}
+
+// UninstallAgentRequest
+type UninstallAgentRequest struct {
+	// OrganizationId with the organization identifier.
+	OrganizationId string `json:"organization_id,omitempty"`
+	// EdgeControllerId with the EIC identifier.
+	EdgeControllerId string `json:"edge_controller_id,omitempty"`
+	// AssetId with the asset identifier.
+	AssetId              string   `json:"asset_id,omitempty"`
+	// OperationId with the operation identifier.
+	OperationId string `json:"operation_id,omitempty"`
+}
+
+func NewUninstallAgentRequestFromGRPC (assetID *grpc_inventory_manager_go.FullUninstallAgentRequest, operationID string) *UninstallAgentRequest {
+	if assetID == nil {
+		return nil
+	}
+	return &UninstallAgentRequest{
+		OrganizationId: assetID.OrganizationId,
+		EdgeControllerId: assetID.EdgeControllerId,
+		AssetId: assetID.AssetId,
+		OperationId:operationID,
+	}
 }
