@@ -37,6 +37,8 @@ const (
 	CredentialsFile = "/etc/edge-controller/credentials.json"
 	accountDisconnect = "AccountDisconnect"
 	accountDelete = "AccountDelete"
+	accountStartSetCmd = "AccountStartupSet"
+	accountConnectCmd = "AccountConnect"
 )
 const DefaultTimeout = time.Minute
 
@@ -271,13 +273,13 @@ func (j * JoinHelper) ConfigureLocalVPN (credentials *grpc_inventory_manager_go.
 	}
 
 	// AccountStartupSet
-	cmd = exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, "AccountStartupSet", credentials.Username)
+	cmd = exec.Command(command, cmdMode, vpnClientAddress, cmdCmd, accountStartSetCmd, credentials.Username)
 	err = cmd.Run()
 	if err != nil {
 		log.Warn().Str("error", err.Error()).Msg("error setting startup")
 	}
 	// Account connect
-	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, "accountConnect", credentials.Username)
+	cmd = exec.Command(command, cmdMode, vpnClientAddress,cmdCmd, accountConnectCmd, credentials.Username)
 	err = cmd.Run()
 	if err != nil {
 		log.Warn().Str("error", err.Error()).Msg("error connecting account")
