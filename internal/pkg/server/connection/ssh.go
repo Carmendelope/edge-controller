@@ -140,6 +140,7 @@ func (conn *SSHConnection) Execute(command string) ([]byte, error) {
 	}
 	go io.Copy(&stderrBuffer, stderrReader)
 
+
 	log.Debug().Str("command", command).Msg("Executing command")
 	output, err := session.Output(command)
 	if err != nil {
@@ -151,7 +152,7 @@ func (conn *SSHConnection) Execute(command string) ([]byte, error) {
 }
 
 // Copy a file to a remote host or viceversa.
-func (conn *SSHConnection) Copy(lpath, rpath string, remoteSource bool) error {
+func (conn *SSHConnection) Copy(lpath, rpath string, remoteSource bool, sudo bool) error {
 	client, session, err := conn.OpenSession()
 	if err != nil {
 		return err
@@ -212,7 +213,13 @@ func (conn *SSHConnection) Copy(lpath, rpath string, remoteSource bool) error {
 
 	// Start SCP command. This will make the remote host wait for a file
 	// through the SCP protocol on stdin.
-	if err := session.Start(fmt.Sprintf("scp -t %s", rpath)); err != nil {
+
+	// Check if the user is sudoer to include "sudo" in the command line [NP-1602]
+	scpCmd := fmt.Sprintf("scp -t %s", rpath)
+	if sudo {
+		scpCmd = fmt.Sprintf("sudo %s", scpCmd)
+	}
+	if err := session.Start(scpCmd); err != nil {
 		return err
 	}
 

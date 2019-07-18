@@ -20,7 +20,7 @@ type Connection interface {
 	Execute(command string) ([]byte, error)
 
 	// Copy a single file to or from a node
-	Copy(lpath string, rpath string, remoteSource bool) error
+	Copy(lpath string, rpath string, remoteSource bool, sudo bool) error
 
 	// Get online status
 	IsOnline() (bool, error)

@@ -108,6 +108,7 @@ func (ai *AgentInstaller) getBaseResponse(operationID string, request *grpc_inve
 // InstallAgent triggers the steps required to install the agent.
 func (ai *AgentInstaller) InstallAgent(operationID string, agentJoinToken string, request *grpc_inventory_manager_go.InstallAgentRequest) {
 	log.Debug().Interface("request", request).Msg("triggering agent install")
+
 	options, optErr := ai.getAgentInstallOptions(request.AgentType)
 	if optErr != nil {
 		update := ai.getBaseResponse(operationID, request)
@@ -184,7 +185,9 @@ func (ai *AgentInstaller) copyBinaryToAsset(options *AgentInstallOptions, operat
 		return dErr
 	}
 	start := time.Now()
-	err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false)
+	// TODO: mirar
+	err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false, true)
+	//err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false, request.is_sudoer)
 	if err != nil {
 		dErr := derrors.NewInternalError("cannot scp agent binary", err).WithParams(request.TargetHost)
 		ai.notifyResult(operationID, request, dErr, "")
@@ -232,7 +235,11 @@ func (ai *AgentInstaller) createCacert(options *AgentInstallOptions, operationID
 		return dErr
 	}
 	start := time.Now()
-	err = conn.Copy(f.Name(), options.CACertTargetPath, false)
+	isSudoer := false
+	if request.Credentials != nil && request.Credentials.IsSudoer{
+		isSudoer = true
+	}
+	err = conn.Copy(f.Name(), options.CACertTargetPath, false, isSudoer)
 	if err != nil {
 		dErr := derrors.NewInternalError("cannot scp CA Cert", err).WithParams(request.TargetHost)
 		ai.notifyResult(operationID, request, dErr, "")
@@ -245,6 +252,7 @@ func (ai *AgentInstaller) createCacert(options *AgentInstallOptions, operationID
 
 // execSSHCommand executes an SSH command.
 func (ai *AgentInstaller) execSSHCommand(cmd string, operationID string, request *grpc_inventory_manager_go.InstallAgentRequest) derrors.Error {
+
 	conn, err := connection.NewSSHConnection(
 		request.TargetHost, DefaultSSHPort,
 		request.Credentials.Username, request.Credentials.GetPassword(), "", request.Credentials.GetClientCertificate())
@@ -253,6 +261,12 @@ func (ai *AgentInstaller) execSSHCommand(cmd string, operationID string, request
 		ai.notifyResult(operationID, request, dErr, "")
 		return dErr
 	}
+
+	// check if the user is sudoer [NP-1602]
+	if request.Credentials != nil && request.Credentials.IsSudoer {
+		cmd = fmt.Sprintf("sudo %s", cmd)
+	}
+
 	log.Debug().Str("toExecute", cmd).Msg("SSH exec")
 	output, err := conn.Execute(cmd)
 	if err != nil {
