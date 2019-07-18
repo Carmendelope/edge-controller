@@ -240,12 +240,12 @@
   version = "v0.0.29"
 
 [[projects]]
-  digest = "1:04af59f3ce86a67a576fc508f8b5a87346f8f2f3bd12478125a33dd893149dd8"
+  digest = "1:050eb665c45aae97653bf05d324a48e77e052058c3fa9e049877eb40563be2bd"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "a8a6dd0bc74510bcca5f22298fc745db2b7fa518"
-  version = "v0.0.53"
+  revision = "e5d9d34803ba41321cb01f8804e366296bdac20f"
+  version = "v0.0.54"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -326,6 +326,7 @@
   packages = [
     ".",
     "format",
+    "ghttp",
     "internal/assertion",
     "internal/asyncassertion",
     "internal/oraclematcher",
@@ -599,6 +600,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/influxdata/influxdb1-client/models",
     "github.com/influxdata/influxdb1-client/v2",
     "github.com/influxdata/influxql",
     "github.com/nalej/authx-interceptors/pkg/interceptor/apikey",
@@ -615,6 +617,7 @@
     "github.com/nalej/sysinfo",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
+    "github.com/onsi/gomega/ghttp",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
     "github.com/satori/go.uuid",

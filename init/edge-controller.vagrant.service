@@ -7,6 +7,6 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=/vagrant/bin/linux_amd64/edge-controller run --configFile=/vagrant/configs/config.yaml
+ExecStart=/vagrant/bin/linux_amd64/edge-controller run --configFile=/vagrant/configs/config.yaml 
 [Install]
 WantedBy=multi-user.target
