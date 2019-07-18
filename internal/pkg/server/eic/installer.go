@@ -185,9 +185,12 @@ func (ai *AgentInstaller) copyBinaryToAsset(options *AgentInstallOptions, operat
 		return dErr
 	}
 	start := time.Now()
-	// TODO: mirar
-	err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false, true)
-	//err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false, request.is_sudoer)
+
+	isSudoer := false
+	if request.Credentials != nil && request.Credentials.IsSudoer{
+		isSudoer = true
+	}
+	err = conn.Copy(options.AgentBinaryPath, options.AgentBinarySCPTargetPath, false, isSudoer)
 	if err != nil {
 		dErr := derrors.NewInternalError("cannot scp agent binary", err).WithParams(request.TargetHost)
 		ai.notifyResult(operationID, request, dErr, "")
