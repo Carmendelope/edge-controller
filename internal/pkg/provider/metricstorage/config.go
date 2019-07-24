@@ -36,6 +36,11 @@ func NewConnectionConfig(conf *viper.Viper) (*ConnectionConfig, derrors.Error) {
 	// Current we only have the InfluxDB provider
 	t := defaultProviderType
 
+	confProvider := conf.GetString("provider")
+	if confProvider != "" {
+		t = ProviderType(confProvider)
+	}
+
 	providerConf := conf.Sub(t.String())
 	if providerConf == nil {
 		providerConf = viper.New()
@@ -57,7 +62,7 @@ func NewConnectionConfig(conf *viper.Viper) (*ConnectionConfig, derrors.Error) {
 }
 
 func retentionFromStr(retentionStr string) (time.Duration, derrors.Error) {
-	if retentionStr == "inf" {
+	if retentionStr == "inf" || retentionStr == "" {
 		log.Warn().Msg("metrics data retention period set to infinite - data will never be expired")
 		return 0, nil
 	}

@@ -66,7 +66,8 @@ func init() {
 	runCmd.Flags().StringVar(&cfg.Name, "name", "", "Edge controller name")
 	runCmd.Flags().StringVar(&cfg.Labels, "labels", "", "Edge controller labels")
 	runCmd.Flags().DurationVar(&cfg.AlivePeriod, "alivePeriod", a,"Notification period to the management cluster")
-	runCmd.Flags().StringVar(&cfg.Geolocation, "geolocation", "", "Edge Controller Geoocation")
+	runCmd.Flags().StringVar(&cfg.Geolocation, "geolocation", "", "Edge Controller Geolocation")
+	runCmd.Flags().StringVar(&cfg.AgentBinaryPath, "agentBinaryPath", "/opt/agents", "Agents binary path as <os_arch>/service-net-agent")
 
 	configHelper.BindPFlag("port", runCmd.Flags().Lookup("port"))
 	configHelper.BindPFlag("agentPort", runCmd.Flags().Lookup("agentPort"))
@@ -80,6 +81,7 @@ func init() {
 	configHelper.BindPFlag("labels", runCmd.Flags().Lookup("labels"))
 	configHelper.BindPFlag("alivePeriod", runCmd.Flags().Lookup("alivePeriod"))
 	configHelper.BindPFlag("geolocation", runCmd.Flags().Lookup("geolocation"))
+	configHelper.BindPFlag("agentBinaryPath", runCmd.Flags().Lookup("agentBinaryPath"))
 
 	// Add plugin-specific flags
 	plugin.SetCommandFlags(runCmd, cfg.PluginConfig, plugin.DefaultPluginPrefix)

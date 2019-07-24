@@ -14,6 +14,12 @@ import (
 const AgentJoinTokenTTL = time.Hour
 
 type Provider interface {
+
+	// AddECOpResponse stores a response for an operation executed by the edge controller.
+	AddECOpResponse(op entities.EdgeControllerOpResponse) derrors.Error
+	// GetPendingECOpResponses retrieves the list of pending operation responses
+	GetPendingECOpResponses(removeEntries bool)([]entities.EdgeControllerOpResponse, derrors.Error)
+
 	// AddPendingOperation stores a pending operation for an agent.
 	AddPendingOperation(op entities.AgentOpRequest) derrors.Error
 	// GetPendingOperations retrieves the list of pending operations for a given asset. The removeEntries

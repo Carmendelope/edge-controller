@@ -221,6 +221,10 @@ func (i *InfluxDBProvider) SetRetention(dur time.Duration) (derrors.Error) {
 }
 
 func (i *InfluxDBProvider) query(q string) (*influx.Response, error) {
+	if !i.Connected() {
+		return nil, fmt.Errorf("not connected")
+	}
+
 	query := influx.NewQuery(q, i.database, "")
 	response, err := i.client.Query(query)
 	if err == nil {

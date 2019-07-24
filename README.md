@@ -52,7 +52,7 @@ once configured the parameters indicated above we can run the VM executing ` mak
 
 **The edge-controller is started!!**
 
-###Some commands that can help...
+### Some commands that can help...
 
 `vagrant ssh`: command to entry to VM
 
@@ -60,3 +60,11 @@ once configured the parameters indicated above we can run the VM executing ` mak
 
 `sudo journalctl -u edge-controller.service -f`: command to see the edge-controller logs
 
+### Set debug on the vagrant environment
+
+```
+vagrant@ubuntu-bionic:~$ sudo systemctl stop edge-controller
+vagrant@ubuntu-bionic:~$ sudo vim /etc/systemd/system/edge-controller.service
+vagrant@ubuntu-bionic:~$ sudo systemctl daemon-reload
+vagrant@ubuntu-bionic:~$ sudo systemctl start edge-controller
+```

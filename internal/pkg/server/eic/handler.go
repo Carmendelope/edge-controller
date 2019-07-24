@@ -6,7 +6,6 @@ package eic
 
 import (
 	"context"
-	"github.com/nalej/derrors"
 	"github.com/nalej/edge-controller/internal/pkg/entities"
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
@@ -70,7 +69,7 @@ func (h *Handler)QueryMetrics(_ context.Context, request *grpc_inventory_manager
 // CreateAgentJoinToken generates a JoinToken to allow an agent to join to a controller
 func (h *Handler)CreateAgentJoinToken(_ context.Context, edgeControllerID *grpc_inventory_go.EdgeControllerId) (*grpc_inventory_manager_go.AgentJoinToken, error){
 
-	log.Info().Interface("edgeControllerID", edgeControllerID).Msg("creating agent join token")
+	log.Debug().Interface("edgeControllerID", edgeControllerID).Msg("creating agent join token")
 	vErr := entities.ValidEdgeControllerID(edgeControllerID)
 	if vErr != nil {
 		return nil, conversions.ToGRPCError(vErr)
@@ -81,18 +80,22 @@ func (h *Handler)CreateAgentJoinToken(_ context.Context, edgeControllerID *grpc_
 }
 
 // UninstallAgent operation to uninstall an agent
-func (h *Handler) UninstallAgent(_ context.Context, assetID *grpc_inventory_manager_go.FullAssetId) (*grpc_common_go.Success, error) {
-	log.Info().Interface("edgeControllerID", assetID.EdgeControllerId).Str("assetID", assetID.AssetId).Msg("uninstall agent")
+func (h *Handler) UninstallAgent(_ context.Context, request *grpc_inventory_manager_go.FullUninstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error) {
+	log.Debug().Interface("edgeControllerID", request.EdgeControllerId).Str("assetID", request.AssetId).Bool("force", request.Force).Msg("uninstall agent")
 
-	vErr := entities.ValidFullAssetID(assetID)
+	vErr := entities.ValidFullUninstallAgentRequest(request)
 	if vErr != nil {
 		return nil, conversions.ToGRPCError(vErr)
 	}
 
-	return h.Manager.UninstallAgent(assetID)
+	return h.Manager.UninstallAgent(request)
 }
 
 // InstallAgent triggers the installation of an agent.
-func (h *Handler) InstallAgent(ctx context.Context, in *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.InstallAgentResponse, error){
-	return nil, conversions.ToGRPCError(derrors.NewUnimplementedError("not implemented yet"))
+func (h *Handler) InstallAgent(ctx context.Context, request *grpc_inventory_manager_go.InstallAgentRequest) (*grpc_inventory_manager_go.EdgeControllerOpResponse, error){
+	vErr := entities.ValidInstallAgentRequest(request)
+	if vErr != nil {
+		return nil, conversions.ToGRPCError(vErr)
+	}
+	return h.Manager.InstallAgent(request)
 }

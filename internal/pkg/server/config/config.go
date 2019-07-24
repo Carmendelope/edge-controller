@@ -56,6 +56,8 @@ type Config struct {
 	CaCert PEMCertificate
 	// Geolocation
 	Geolocation string
+	// AgentBinaryPath with the base path where the agent binaries are stored.
+	AgentBinaryPath string
 
 	// Plugin configuration - using Viper to be flexible so it's easy to
 	// add new plugins
@@ -92,6 +94,12 @@ func (conf * Config) Validate() derrors.Error {
 	if conf.AlivePeriod.Seconds() < 1 {
 		return derrors.NewInvalidArgumentError("alivePeriod should be minimum 1s")
 	}
+	if conf.JoinTokenPath == "" {
+		return derrors.NewAlreadyExistsError("jointokenpath must be specified")
+  }
+	if conf.AgentBinaryPath == "" {
+		return derrors.NewInvalidArgumentError("agentBinaryPath must be set")
+	}
 
 	return nil
 }
@@ -116,6 +124,7 @@ func (conf *Config) Print() {
 	}
 	log.Info().Interface("AlivePeriod", conf.AlivePeriod).Msg("Alive Period")
 	log.Info().Str("Geolocation", conf.Geolocation).Msg("Edge Controller Location")
+	log.Info().Str("basePath", conf.AgentBinaryPath).Msg("Agent binaries")
 	for _, k := range(conf.PluginConfig.AllKeys()) {
 		log.Info().Interface(k, conf.PluginConfig.Get(k)).Msg("Plugin configuration option")
 	}

@@ -1,5 +1,5 @@
 
-joinTokenPath: /vagrant/joinToken.json
+joinTokenPath: /tmp/joinToken.json
 useBBoltProviders: true
 bboltpath: /home/vagrant/database.db
 name: EdgeController001

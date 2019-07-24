@@ -35,9 +35,11 @@ type Notifier struct {
 	// edgeControllerID with de EIC identifier
 	edgeControllerID string
 	//AssetUninstall is a map of asset identifiers whose are pending to be uninstalled
-	assetUninstall map[string]entities.FullAssetId
+	assetUninstall map[string]entities.UninstallAgentRequest
 	// AssetUninstalled is a map of asset identifiers whose are uninstalled and they are pending to be sent to management cluster
-	assetUninstalled map[string] entities.FullAssetId
+	assetUninstalled map[string] entities.UninstallAgentRequest
+
+	mngLoopTicker *time.Ticker
 }
 
 func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient,
@@ -51,8 +53,8 @@ func NewNotifier(notifyPeriod time.Duration, provider asset.Provider, mngtClient
 		mngtClient: mngtClient,
 		organizationID: organizationID,
 		edgeControllerID: edgeControllerID,
-		assetUninstall: make (map[string]entities.FullAssetId,0),
-		assetUninstalled: make (map[string]entities.FullAssetId,0),
+		assetUninstall: make (map[string]entities.UninstallAgentRequest,0),
+		assetUninstalled: make (map[string]entities.UninstallAgentRequest,0),
 	}
 }
 
@@ -77,9 +79,18 @@ func (n *Notifier) AgentAlive(assetID string, ip string) {
 
 // LaunchNotifierLoop is intended to be launched as goroutine for periodically sending data back to the management cluster.
 func (n *Notifier) LaunchNotifierLoop() {
-	ticker := time.NewTicker(n.notifyPeriod)
-	for range ticker.C {
+	log.Info().Msg("Launching Notifier Loop")
+	n.mngLoopTicker = time.NewTicker(n.notifyPeriod)
+	for range n.mngLoopTicker.C {
 		n.notifyManagementCluster()
+	}
+}
+
+func (n *Notifier) StopNotifierLoop() {
+	if n.mngLoopTicker != nil {
+		log.Info().Msg("Stopping Notifier Loop")
+		n.mngLoopTicker.Stop()
+		
 	}
 }
 
@@ -132,6 +143,37 @@ func (n *Notifier) sendPendingResponses() {
 
 }
 
+// sendPendingECResponses get all pending edge-controller responses and send them to management cluster
+func (n *Notifier) sendPendingECResponses() {
+	log.Debug().Msg("sending pending edge-controller responses")
+	// get pending EC responses from database.
+	pendingRes, err := n.provider.GetPendingECOpResponses(true)
+	if err != nil {
+		log.Warn().Str("error", err.DebugReport()).Msg("error getting pending edge-controller operation responses")
+		return
+	}
+
+	log.Debug().Int("pending len", len(pendingRes)).Msg("pending responses")
+
+	for _, res := range pendingRes {
+
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		_, err := n.mngtClient.CallbackECOperation(ctx, res.ToGRPC())
+		cancel()
+
+		if err != nil {
+			log.Warn().Str("operation_id", res.OperationId).Str("error", conversions.ToDerror(err).DebugReport()).
+				Msg("error sending Edge-controller response")
+			// store again in the pending op responses
+			errAdd := n.provider.AddECOpResponse(res)
+			if errAdd != nil{
+				log.Warn().Str("operation_id", res.OperationId).Msg("storing the edge-controller response")
+			}
+		}
+	}
+
+}
+
 func (n *Notifier) sendPendingUninstallMessages() bool {
 
 	for _, msg := range n.assetUninstalled {
@@ -139,7 +181,9 @@ func (n *Notifier) sendPendingUninstallMessages() bool {
 
 		_, err := n.mngtClient.AgentUninstalled(ctx, &grpc_inventory_go.AssetUninstalledId{
 			OrganizationId: msg.OrganizationId,
+			EdgeControllerId: msg.EdgeControllerId,
 			AssetId: msg.AssetId,
+			OperationId: msg.OperationId,
 		})
 		cancel()
 		if err != nil {
@@ -175,6 +219,10 @@ func (n *Notifier) notifyManagementCluster() {
 			delete(n.assetUninstalled, k)
 		}
 	}
+
+	// send EcResponses messages to management cluster
+	n.sendPendingECResponses()
+
 }
 
 func (n * Notifier) NotifyAgentStart(start * grpc_inventory_manager_go.AgentStartInfo) derrors.Error{
@@ -193,19 +241,24 @@ func (n * Notifier) NotifyCallback(response * grpc_inventory_manager_go.AgentOpR
 	defer n.Unlock()
 	err := n.provider.AddOpResponse(*entities.NewAgentOpResponseFromGRPC(response))
 	if err != nil{
-		return nil
+		return err
 	}
-	// TODO Implement send or queue
 	return nil
 }
 
-func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId) derrors.Error {
+func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullUninstallAgentRequest, opID string) derrors.Error {
 
 	n.Lock()
 	defer n.Unlock()
 
-	// add the assetID in AssetUninstall map
-	n.assetUninstall[assetID.AssetId] = *entities.NewFullAssetIdFromGRPC(assetID)
+	if assetID.Force{
+		// if the uninstalling is forced, the agent is deleted directly,
+		// the agent is been saved in assetUninstalled map
+		n.assetUninstalled[assetID.AssetId] = *entities.NewUninstallAgentRequestFromGRPC(assetID, opID)
+	}else {
+		// add the assetID in AssetUninstall map
+		n.assetUninstall[assetID.AssetId] = *entities.NewUninstallAgentRequestFromGRPC(assetID, opID)
+	}
 
 	// remove all the entries
 	delete (n.assetAlive, assetID.AssetId)
@@ -216,7 +269,7 @@ func (n *Notifier) UninstallAgent(assetID *grpc_inventory_manager_go.FullAssetId
 }
 
 // PendingInstall check if a message has been sent to uninstall this agent
-func (n *Notifier) PendingInstall(assetId string) (bool, entities.FullAssetId) {
+func (n *Notifier) PendingUnInstall(assetId string) (bool, entities.UninstallAgentRequest) {
 	n.Lock()
 	defer n.Unlock()
 
@@ -239,4 +292,14 @@ func (n *Notifier) RemovePendingUninstall (assetId string) {
 		log.Warn().Str("assetID", assetId).Msg("not found in assetUninstall map")
 	}
 
+}
+
+func (n *Notifier) NotifyECOpResponse(response * grpc_inventory_manager_go.EdgeControllerOpResponse) derrors.Error{
+	n.Lock()
+	defer n.Unlock()
+	err := n.provider.AddECOpResponse(*entities.NewEdgeControllerOpResponseFromGRPC(response))
+	if err != nil{
+		return err
+	}
+	return nil
 }

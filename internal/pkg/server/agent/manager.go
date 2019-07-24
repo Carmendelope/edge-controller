@@ -16,7 +16,6 @@ import (
 	"github.com/nalej/grpc-inventory-manager-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
-	"github.com/satori/go.uuid"
 	"time"
 )
 
@@ -40,6 +39,12 @@ func NewManager(cfg config.Config, assetProvider asset.Provider, notifier Notifi
 func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) (*grpc_inventory_manager_go.AgentJoinResponse, derrors.Error) {
 	log.Debug().Str("agentID", request.AgentId).Msg("agent request join")
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+
+	agentLocation := m.config.Geolocation
+	if request.Geolocation != ""{
+		agentLocation = request.Geolocation
+	}
+
 	defer cancel()
 	toSend := &grpc_inventory_manager_go.AgentJoinRequest{
 		OrganizationId:       m.config.OrganizationId,
@@ -49,6 +54,7 @@ func (m * Manager) AgentJoin(request *grpc_edge_controller_go.AgentJoinRequest) 
 		Os:                   request.Os,
 		Hardware:             request.Hardware,
 		Storage:              request.Storage,
+		Geolocation:          agentLocation,
 	}
 	response, err := m.managementClient.AgentJoin(ctx, toSend)
 	if err != nil{
@@ -89,7 +95,7 @@ func (m * Manager) AgentCheck(request *grpc_edge_controller_go.AgentCheckRequest
 	// TODO: Verify clock sync
 	log.Info().Str("assetID", request.AssetId).Str("ip", ip).Msg("agent check")
 
-	exists, asset := m.notifier.PendingInstall(request.AssetId)
+	exists, asset := m.notifier.PendingUnInstall(request.AssetId)
 	// verify if this agent is pending to be uninstalled
 	if exists{
 
@@ -163,13 +169,13 @@ func (m *Manager) RemoveAgent(request entities.FullAssetId) derrors.Error{
 }
 
 // SendUninstallMessageToAgent operation to send a message to an agent to inform it is going to be uninstalled
-func (m *Manager) SendUninstallMessageToAgent (request entities.FullAssetId) (*grpc_edge_controller_go.CheckResult, derrors.Error){
+func (m *Manager) SendUninstallMessageToAgent (request entities.UninstallAgentRequest) (*grpc_edge_controller_go.CheckResult, derrors.Error){
 
 	result := []*grpc_inventory_manager_go.AgentOpRequest{{
 		OrganizationId: request.OrganizationId,
 		EdgeControllerId: request.EdgeControllerId,
 		AssetId: request.AssetId,
-		OperationId: uuid.NewV4().String(),
+		OperationId: request.OperationId,
 		Operation: UninstallOp,
 		Plugin: CorePluging,
 	}}
