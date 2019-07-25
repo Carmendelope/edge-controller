@@ -149,7 +149,6 @@
   version = "v1.1.2"
 
 [[projects]]
-  branch = "master"
   digest = "1:1e1800b6354ac0f6c22ada1f0fbc3f086a35bc5d591a88f3a3474c7357cf483b"
   name = "github.com/nalej/authx-interceptors"
   packages = [
@@ -158,6 +157,7 @@
   ]
   pruneopts = ""
   revision = "f6e10135723fef56bd95b181abdb3a0410cc3bd1"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:0cc441f3dfe124dd74f44dd7e466dfc17cc7edff468094fbc3847a96b5ebf6f7"
