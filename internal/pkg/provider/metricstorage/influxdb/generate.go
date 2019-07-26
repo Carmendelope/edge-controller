@@ -137,17 +137,25 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 	// complete time range and returns a single value per asset
 	selectClause = fmt.Sprintf("%s %s", selectClause, groupByClause(resolution, "asset_id"))
 
+	// From this point onward we aggregate over assets, so we need
+	// to count how many
+	assetCount := ", count(asset_id) AS asset_count"
 
-	// Aggregate over assets. If we have a single asset this is a no-op.
-	if aggr != entities.AggregateNone {
-		newSelector := "aggr_metric"
-		selectClause = fmt.Sprintf("%s FROM (%s) %s",
-			selectFromFuncFieldAs(aggr.String(), selector, newSelector),
-			selectClause,
-			groupByClause(resolution),
-		)
-		selector = newSelector
+	// Aggregate over assets. If we have a single asset this is a no-op. We
+	// execute anyway to make sure we have asset count
+	if aggr == entities.AggregateNone {
+		// We only have "none" if we select for at most a single asset
+		aggr = entities.AggregateAvg
 	}
+
+	newSelector := "aggr_metric"
+	selectClause = fmt.Sprintf("%s%s FROM (%s) %s",
+		selectFromFuncFieldAs(aggr.String(), selector, newSelector),
+		assetCount,
+		selectClause,
+		groupByClause(resolution),
+	)
+	selector = newSelector
 
 	// Now that we've summed and aggregated by asset, we can limit the
 	// result for a single point in time. We will always keep the resolution
@@ -158,14 +166,18 @@ func generateQuery(metric string, tagSelector entities.TagSelector, timeRange *e
 	// more than 60s, its values will not be included in the average. That
 	// is probably reasonable, because at that moment the asset is probably
 	// not available.
+
+	// For this last aggregation we just need to propagate the asset count
+	assetCount = ", last(asset_count) AS asset_count"
 	if !timeRange.Timestamp.IsZero() {
-		selectClause = fmt.Sprintf("SELECT last(%s) FROM (%s)", selector, selectClause)
+		selectClause = fmt.Sprintf("SELECT last(%s)%s FROM (%s)", selector, assetCount, selectClause)
 	} else if resolution != timeRange.Resolution {
 		// If we used a different time window for aggregation than requested,
 		// now is the time to aggregate over the requested window
 		newSelector := "window_metric"
-		selectClause = fmt.Sprintf("%s FROM (%s) %s",
+		selectClause = fmt.Sprintf("%s%s FROM (%s) %s",
 			selectFromFuncFieldAs("mean", selector, newSelector),
+			assetCount,
 			selectClause,
 			groupByClause(timeRange.Resolution),
 		)

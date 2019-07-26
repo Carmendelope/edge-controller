@@ -60,12 +60,14 @@ func NewMetricsDataFromGRPC(data *grpc_edge_controller_go.PluginData) (*MetricsD
 type MetricValue struct {
 	Timestamp time.Time
 	Value int64
+	AssetCount int64
 }
 
 func (m *MetricValue) ToGRPC() *grpc_inventory_manager_go.QueryMetricsResult_Value {
 	return &grpc_inventory_manager_go.QueryMetricsResult_Value{
 		Timestamp: m.Timestamp.UTC().Unix(),
 		Value: m.Value,
+		AssetCount: m.AssetCount,
 	}
 }
 
@@ -135,11 +137,11 @@ const (
 	AggregateAvg AggregationMethod = "mean"
 )
 
-func AggregationMethodFromGRPC(method grpc_inventory_manager_go.QueryMetricsRequest_AggregationType) AggregationMethod {
-	var aggrMap = map[grpc_inventory_manager_go.QueryMetricsRequest_AggregationType]AggregationMethod{
-		grpc_inventory_manager_go.QueryMetricsRequest_NONE: AggregateNone,
-		grpc_inventory_manager_go.QueryMetricsRequest_SUM: AggregateSum,
-		grpc_inventory_manager_go.QueryMetricsRequest_AVG: AggregateAvg,
+func AggregationMethodFromGRPC(method grpc_inventory_manager_go.AggregationType) AggregationMethod {
+	var aggrMap = map[grpc_inventory_manager_go.AggregationType]AggregationMethod{
+		grpc_inventory_manager_go.AggregationType_NONE: AggregateNone,
+		grpc_inventory_manager_go.AggregationType_SUM: AggregateSum,
+		grpc_inventory_manager_go.AggregationType_AVG: AggregateAvg,
 	}
 
 	return aggrMap[method]
@@ -156,7 +158,7 @@ func ValidQueryMetricsRequest(request *grpc_inventory_manager_go.QueryMetricsReq
 		return derr
 	}
 
-	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() == grpc_inventory_manager_go.QueryMetricsRequest_NONE {
+	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() == grpc_inventory_manager_go.AggregationType_NONE {
 		return derrors.NewInvalidArgumentError("metrics for more than one asset requested without aggregation method")
 	}
 

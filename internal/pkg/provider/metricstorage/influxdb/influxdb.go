@@ -245,9 +245,14 @@ func metricValuesFromResponse(response *influx.Response) ([]entities.MetricValue
 		if derr != nil {
 			return nil, derr
 		}
+		assetCount, derr := valueFromInterface(v[2])
+		if derr != nil {
+			return nil, derr
+		}
 		result = append(result, entities.MetricValue{
 			Timestamp: timestamp,
 			Value: value,
+			AssetCount: assetCount,
 		})
 	}
 
