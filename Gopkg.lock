@@ -248,6 +248,14 @@
   version = "v0.0.55"
 
 [[projects]]
+  digest = "1:9c4948fc5141c6c3e5287e5a7c60b06e1465751012c5451dc5d9ee8b045d2c7c"
+  name = "github.com/nalej/grpc-monitoring-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "0004501b8eb8a1fac8a69f1fa8e36c845ee33783"
+  version = "v0.0.4"
+
+[[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
   name = "github.com/nalej/grpc-organization-go"
   packages = ["."]
@@ -612,6 +620,7 @@
     "github.com/nalej/grpc-eic-api-go",
     "github.com/nalej/grpc-inventory-go",
     "github.com/nalej/grpc-inventory-manager-go",
+    "github.com/nalej/grpc-monitoring-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/nalej/infra-net-plugin",
     "github.com/nalej/sysinfo",
