@@ -155,13 +155,14 @@ var _ = ginkgo.Describe("influxdb", func() {
 		ginkgo.It("should return valid data", func() {
 			expectQueries(server, testQuery{
 				Type: regularQuery,
-				Response: []interface{}{[]interface{}{"2019-07-11T10:32:00Z",689}},
+				Response: []interface{}{[]interface{}{"2019-07-11T10:32:00Z",689,2}},
 			})
 			timestamp, _ := time.Parse(time.RFC3339, "2019-07-11T10:32:00Z")
 			response := []entities.MetricValue{
 				entities.MetricValue{
 					Timestamp: timestamp,
 					Value: 689,
+					AssetCount: 2,
 				},
 			}
 			gomega.Expect(provider.Connect()).To(gomega.Succeed())

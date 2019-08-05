@@ -15,6 +15,7 @@ import (
 	"github.com/nalej/grpc-common-go"
 	"github.com/nalej/grpc-inventory-go"
 	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-monitoring-go"
 	"github.com/nalej/grpc-utils/pkg/conversions"
 	"github.com/rs/zerolog/log"
 	"github.com/satori/go.uuid"
@@ -119,7 +120,7 @@ func (m *Manager) Configure(request *grpc_inventory_manager_go.ConfigureEICReque
 }
 
 // ListMetrics returns available metrics for a certain selection of assets
-func (m *Manager) ListMetrics(selector *grpc_inventory_manager_go.AssetSelector) (*grpc_inventory_manager_go.MetricsList, error) {
+func (m *Manager) ListMetrics(selector *grpc_inventory_go.AssetSelector) (*grpc_monitoring_go.MetricsList, error) {
 	// TODO: Potentially check if the Organization ID and Edge
 	// Controller ID on the selector matches.
 
@@ -128,7 +129,7 @@ func (m *Manager) ListMetrics(selector *grpc_inventory_manager_go.AssetSelector)
 		return nil, derr
 	}
 
-	metricsList := &grpc_inventory_manager_go.MetricsList{
+	metricsList := &grpc_monitoring_go.MetricsList{
 		Metrics: metrics,
 	}
 
@@ -137,7 +138,7 @@ func (m *Manager) ListMetrics(selector *grpc_inventory_manager_go.AssetSelector)
 
 // QueryMetrics retrieves the monitoring data of assets local to this
 // Edge Controller
-func (m *Manager) QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRequest) (*grpc_inventory_manager_go.QueryMetricsResult, error) {
+func (m *Manager) QueryMetrics(request *grpc_monitoring_go.QueryMetricsRequest) (*grpc_monitoring_go.QueryMetricsResult, error) {
 	tagSelector := entities.NewTagSelectorFromGRPC(request.GetAssets())
 	timeRange := entities.NewTimeRangeFromGRPC(request.GetTimeRange())
 	aggrMethod := entities.AggregationMethodFromGRPC(request.GetAggregation())
@@ -154,7 +155,7 @@ func (m *Manager) QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 	}
 
 	// Create result for this asset or aggreagation of assets, for each metric
-	grpcResults := make(map[string]*grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics, len(metrics))
+	grpcResults := make(map[string]*grpc_monitoring_go.QueryMetricsResult_AssetMetrics, len(metrics))
 	for _, metric := range metrics {
 		metricValues, derr := m.metricStorageProvider.QueryMetric(metric, tagSelector, timeRange, aggrMethod)
 		if derr != nil {
@@ -162,12 +163,12 @@ func (m *Manager) QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 		}
 
 		// Convert the values
-		grpcValues := make([]*grpc_inventory_manager_go.QueryMetricsResult_Value, 0, len(metricValues))
+		grpcValues := make([]*grpc_monitoring_go.QueryMetricsResult_Value, 0, len(metricValues))
 		for _, value := range metricValues {
 			grpcValues = append(grpcValues, value.ToGRPC())
 		}
 
-		grpcResult := &grpc_inventory_manager_go.QueryMetricsResult_AssetMetricValues{
+		grpcResult := &grpc_monitoring_go.QueryMetricsResult_AssetMetricValues{
 			Values: grpcValues,
 		}
 
@@ -179,14 +180,14 @@ func (m *Manager) QueryMetrics(request *grpc_inventory_manager_go.QueryMetricsRe
 			grpcResult.Aggregation = request.GetAggregation()
 		}
 
-		grpcResults[metric] = &grpc_inventory_manager_go.QueryMetricsResult_AssetMetrics{
-			Metrics: []*grpc_inventory_manager_go.QueryMetricsResult_AssetMetricValues{
+		grpcResults[metric] = &grpc_monitoring_go.QueryMetricsResult_AssetMetrics{
+			Metrics: []*grpc_monitoring_go.QueryMetricsResult_AssetMetricValues{
 				grpcResult,
 			},
 		}
 	}
 
-	result := &grpc_inventory_manager_go.QueryMetricsResult{
+	result := &grpc_monitoring_go.QueryMetricsResult{
 		Metrics: grpcResults,
 	}
 	return result, nil

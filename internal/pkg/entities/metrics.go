@@ -13,7 +13,7 @@ import (
 	"github.com/nalej/derrors"
 
 	"github.com/nalej/grpc-edge-controller-go"
-	"github.com/nalej/grpc-inventory-manager-go"
+	"github.com/nalej/grpc-monitoring-go"
 )
 
 type MetricsData struct {
@@ -63,8 +63,8 @@ type MetricValue struct {
 	AssetCount int64
 }
 
-func (m *MetricValue) ToGRPC() *grpc_inventory_manager_go.QueryMetricsResult_Value {
-	return &grpc_inventory_manager_go.QueryMetricsResult_Value{
+func (m *MetricValue) ToGRPC() *grpc_monitoring_go.QueryMetricsResult_Value {
+	return &grpc_monitoring_go.QueryMetricsResult_Value{
 		Timestamp: m.Timestamp.UTC().Unix(),
 		Value: m.Value,
 		AssetCount: m.AssetCount,
@@ -99,7 +99,7 @@ func TimeFromGRPC(in int64) time.Time {
 	return time.Unix(in, 0).UTC()
 }
 
-func NewTimeRangeFromGRPC(timeRange *grpc_inventory_manager_go.QueryMetricsRequest_TimeRange) *TimeRange {
+func NewTimeRangeFromGRPC(timeRange *grpc_monitoring_go.QueryMetricsRequest_TimeRange) *TimeRange {
 	return &TimeRange{
 		Timestamp: TimeFromGRPC(timeRange.GetTimestamp()),
 		Start: TimeFromGRPC(timeRange.GetTimeStart()),
@@ -108,7 +108,7 @@ func NewTimeRangeFromGRPC(timeRange *grpc_inventory_manager_go.QueryMetricsReque
 	}
 }
 
-func ValidTimeRange(timeRange *grpc_inventory_manager_go.QueryMetricsRequest_TimeRange) derrors.Error {
+func ValidTimeRange(timeRange *grpc_monitoring_go.QueryMetricsRequest_TimeRange) derrors.Error {
 	if !(timeRange.GetTimestamp() == 0) {
 		if timeRange.GetTimeStart() != 0 || timeRange.GetTimeEnd() != 0 || timeRange.GetResolution() != 0 {
 			return derrors.NewInvalidArgumentError("timestamp is set; start, end and resolution should be 0").
@@ -137,17 +137,17 @@ const (
 	AggregateAvg AggregationMethod = "mean"
 )
 
-func AggregationMethodFromGRPC(method grpc_inventory_manager_go.AggregationType) AggregationMethod {
-	var aggrMap = map[grpc_inventory_manager_go.AggregationType]AggregationMethod{
-		grpc_inventory_manager_go.AggregationType_NONE: AggregateNone,
-		grpc_inventory_manager_go.AggregationType_SUM: AggregateSum,
-		grpc_inventory_manager_go.AggregationType_AVG: AggregateAvg,
+func AggregationMethodFromGRPC(method grpc_monitoring_go.AggregationType) AggregationMethod {
+	var aggrMap = map[grpc_monitoring_go.AggregationType]AggregationMethod{
+		grpc_monitoring_go.AggregationType_NONE: AggregateNone,
+		grpc_monitoring_go.AggregationType_SUM: AggregateSum,
+		grpc_monitoring_go.AggregationType_AVG: AggregateAvg,
 	}
 
 	return aggrMap[method]
 }
 
-func ValidQueryMetricsRequest(request *grpc_inventory_manager_go.QueryMetricsRequest) derrors.Error {
+func ValidQueryMetricsRequest(request *grpc_monitoring_go.QueryMetricsRequest) derrors.Error {
 	derr := ValidAssetSelector(request.GetAssets())
 	if derr != nil {
 		return derr
@@ -158,7 +158,7 @@ func ValidQueryMetricsRequest(request *grpc_inventory_manager_go.QueryMetricsReq
 		return derr
 	}
 
-	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() == grpc_inventory_manager_go.AggregationType_NONE {
+	if len(request.GetAssets().GetAssetIds()) != 1 && request.GetAggregation() == grpc_monitoring_go.AggregationType_NONE {
 		return derrors.NewInvalidArgumentError("metrics for more than one asset requested without aggregation method")
 	}
 

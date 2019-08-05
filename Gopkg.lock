@@ -208,20 +208,20 @@
   version = "v0.0.14"
 
 [[projects]]
-  digest = "1:e0001e8b2e045eee971a2faf29e52922390b1f77d601af3bbb75d0e1daa65aac"
+  digest = "1:ea03b2747ad78539cf5a534629419da27c7330727c41778b923e225c374f0789"
   name = "github.com/nalej/grpc-edge-controller-go"
   packages = ["."]
   pruneopts = ""
-  revision = "515aaa6ddbab1511afe6626732fdae567ed44b72"
-  version = "v0.0.17"
+  revision = "dfc9131d63789e72d7789c5ed7a2c55a3eccfcf6"
+  version = "v0.0.18"
 
 [[projects]]
-  digest = "1:915c40b11b5686c39ccc4cdca3bf0d171975fe8708b4bdb162332ee71ec0a40e"
+  digest = "1:64a27b5f33e8d598ed206ae7bb06f4b83a79f2f6e17f543feaca3e90d1a4b421"
   name = "github.com/nalej/grpc-edge-inventory-proxy-go"
   packages = ["."]
   pruneopts = ""
-  revision = "6b92da06400642e01fcbe05e1ccc8ef086df4a4e"
-  version = "v0.0.14"
+  revision = "0cd197928a5edf6abce32a6690c1f910ab35fae5"
+  version = "v0.0.16"
 
 [[projects]]
   digest = "1:791a72ce09d30b99964d4f6d422df87a1208d5f38a6cb4294def51f916a868f1"
@@ -232,20 +232,28 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:ce7e6240b0974eb4de02c426f48fee28fdbe89e42ce36d099be59e97e8892777"
+  digest = "1:3ff7102c03393dd8f56c2f8e7cc5f469bb83b2aa4800b64e25fe440214309d4e"
   name = "github.com/nalej/grpc-inventory-go"
   packages = ["."]
   pruneopts = ""
-  revision = "3ee94bcdfabaa76fbe901f7d3c0f3e24f204e8de"
-  version = "v0.0.29"
+  revision = "e7ef121a4c1e38908a63afb1edde57fb24f15875"
+  version = "v0.0.30"
 
 [[projects]]
-  digest = "1:e3e3dc63d9a792ec37a33b929ed16ea6bb430dad06f3a8268bc9224c5b94ee5f"
+  digest = "1:aadce723b67827e0bdd529c2ec4b08609895c1959a1739d2f275d8d447d6c6c1"
   name = "github.com/nalej/grpc-inventory-manager-go"
   packages = ["."]
   pruneopts = ""
-  revision = "5cead1ae1ad143fa3bd17d594bb0780f166547ab"
-  version = "v0.0.55"
+  revision = "9bc573adca95bf6e4debe84de9f6f4e30b266cab"
+  version = "v0.0.56"
+
+[[projects]]
+  digest = "1:1e9ad6ea6b12a77331f1b88f99457719c2d2d09b88e8f97112edfe2c68feac38"
+  name = "github.com/nalej/grpc-monitoring-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "8ee6db519ca06be0fed43f08b1dc05c74e610dbd"
+  version = "v0.0.5"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -612,6 +620,7 @@
     "github.com/nalej/grpc-eic-api-go",
     "github.com/nalej/grpc-inventory-go",
     "github.com/nalej/grpc-inventory-manager-go",
+    "github.com/nalej/grpc-monitoring-go",
     "github.com/nalej/grpc-utils/pkg/conversions",
     "github.com/nalej/infra-net-plugin",
     "github.com/nalej/sysinfo",
