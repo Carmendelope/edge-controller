@@ -110,6 +110,7 @@ func (s*Service) GetProviders() * Providers{
 }
 
 func (s*Service) GetClients() * Clients{
+	log.Info().Msg("Getting clients")
 	mngtConn, err := grpc.Dial(s.Configuration.ProxyURL, grpc.WithInsecure())
 	if err != nil {
 		log.Fatal().Str("error", err.Error()).Msg("cannot create connection with Edge Management URL")
@@ -223,7 +224,7 @@ func (s *Service) Run() error {
 	})
 
 	// launch the alive loop
-	go s.aliveLoop()
+	go s.aliveLoop(clients)
 
 	if err != nil {
 		log.Fatal().Str("error", conversions.ToDerror(err).DebugReport()).Msg("error starting EIC")
@@ -239,10 +240,16 @@ func (s *Service) Run() error {
 	return s.LaunchAgentServer(providers, clients, notifier)
 }
 
-func (s *Service) sendAliveMessage()  {
+func (s *Service) sendAliveMessage(clients * Clients)  {
 	log.Info().Msg("sending alive message")
 
-	proxyClient := s.GetClients().inventoryProxyClient
+	var proxyClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient
+	if clients != nil {
+		proxyClient = clients.inventoryProxyClient
+	}else{
+		proxyClient = s.GetClients().inventoryProxyClient
+	}
+
 	// Send alive message to proxy
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	_, err := proxyClient.EICAlive(ctx, &grpc_inventory_go.EdgeControllerId{
@@ -257,10 +264,10 @@ func (s *Service) sendAliveMessage()  {
 }
 
 // aliveLoop sends alive message to proxy
-func (s*Service) aliveLoop() {
+func (s*Service) aliveLoop(clients * Clients) {
 
 	// send the first ONLINE message
-	s.sendAliveMessage()
+	s.sendAliveMessage(clients)
 
 	// every AlivePeriod seconds ...
 	ticker := time.NewTicker(s.Configuration.AlivePeriod)
@@ -268,7 +275,7 @@ func (s*Service) aliveLoop() {
 	for {
 		select {
 			case <- ticker.C:
-				s.sendAliveMessage()
+				s.sendAliveMessage(clients)
 		}
 	}
 }
