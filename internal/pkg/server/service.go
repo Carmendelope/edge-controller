@@ -243,7 +243,7 @@ func (s *Service) Run() error {
 func (s *Service) sendAliveMessage(clients * Clients)  {
 	log.Info().Msg("sending alive message")
 
-	proxyClient := s.GetClients().inventoryProxyClient
+	proxyClient := clients.inventoryProxyClient
 
 	// Send alive message to proxy
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
