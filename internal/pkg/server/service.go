@@ -243,12 +243,7 @@ func (s *Service) Run() error {
 func (s *Service) sendAliveMessage(clients * Clients)  {
 	log.Info().Msg("sending alive message")
 
-	var proxyClient grpc_edge_inventory_proxy_go.EdgeInventoryProxyClient
-	if clients != nil {
-		proxyClient = clients.inventoryProxyClient
-	}else{
-		proxyClient = s.GetClients().inventoryProxyClient
-	}
+	proxyClient := clients.inventoryProxyClient
 
 	// Send alive message to proxy
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
