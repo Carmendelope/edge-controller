@@ -1,58 +1,41 @@
-# edge-controller
-Egde controller for the Service Net
 
-# Introduction
+# Edge-Controller
+Edge Controller for the Service Net. 
 
-The Edge Controller is a component that will be deployed on the user premises and it is in charge of managing a collection of
-agents. In terms of how that component will be deployed, we envision a VM deployment that could potentially be transformed
-into an appliance.
-
-# Sync and Async operations
-
-The EIC uses both sync and async communication with the management cluster. The following table describes
-the different types of operations and how those are performed
-
- | Operation  | Type | Local persistence | Description |
- | ------------- | ------------- |------------- |------------- |
- | Agent Join  | SYNC | No | An agent wants to join the EIC |
- | Agent Start | ASYNC | Yes | An agent starts |
- | Agent Callback | ASYNC | Yes | An agent sends a callback from an operation |
+The Edge Controller is a component that will be deployed on the user premises and 
+it is in charge of managing a collection of agents. 
 
 
-# How to run the edge-controller
- The run command is in the file `/Users/cdelope/go/src/github.com/nalej/edge-controller/init/edge-controller.vagrant.service`
-  
- ` ...
- 
- ExecStart=/vagrant/bin/linux_amd64/edge-controller run --joinTokenPath=_joinTokenPath_ --useBBoltProviders --bboltpath=_databasePath_ --name=_ec_name_ --labels=_labels_ --geolocation=_location_
- 
-  ...
-`
+The EC connects to the management cluster through a VPN. Receives _Alive Messages_
+from agents and can determine their IP. 
 
-- __joinTokenPath:__
- 
-we need a token to join an edge-controller. We can obtain it executing public-api
-
-Once the login is done:
-
-`./bin/public-api-cli login --email=_user_ --password=*****`
-
-we can execute the command to obtain it:
-
-`./bin/public-api-cli edgecontroller create-join-token --outputPath=_token_file_path`
-
-we already have the token, we can do the join of the edge-controller
-
-- __bbolpath:__ path where the database file is going to saved. 
-- __name:__ is required
-- __labels and geolocation:__ no required
+It is capable of sending orders received from the management cluster to agents and works with a 
+plugin system
 
 
-once configured the parameters indicated above we can run the VM executing ` make vagrant`
+## Getting Started
+The EC runs in a virtual machine. The component includes an installation of a VM with vagrant. To run it, you need
+to follow the steps bellow:
 
-**The edge-controller is started!!**
+1) To join an EC, a join token is required. This token is generated in authx component and we can ask for it executing 
+a public-api command:
+```
+./bin/public-api-cli edgecontroller create-join-token --outputPath=_token_file_path
+```
+2) configure the EC updating the file `configs/config.yaml`
+```
+joinTokenPath: /tmp/joinToken.json
+useBBoltProviders: true
+bboltpath: /home/vagrant/database.db
+name: <EC_name>
+labels: "name:test"
+geolocation: "Madrid, Madrid, Spain" 
+```
+3) Run the VM executing ` make vagrant`
 
-### Some commands that can help...
+_The edge-controller is started!!_
+
+###Some commands that can help...
 
 `vagrant ssh`: command to entry to VM
 
@@ -60,7 +43,7 @@ once configured the parameters indicated above we can run the VM executing ` mak
 
 `sudo journalctl -u edge-controller.service -f`: command to see the edge-controller logs
 
-### Set debug on the vagrant environment
+**Set debug on the vagrant environment**
 
 ```
 vagrant@ubuntu-bionic:~$ sudo systemctl stop edge-controller
@@ -68,3 +51,84 @@ vagrant@ubuntu-bionic:~$ sudo vim /etc/systemd/system/edge-controller.service
 vagrant@ubuntu-bionic:~$ sudo systemctl daemon-reload
 vagrant@ubuntu-bionic:~$ sudo systemctl start edge-controller
 ```
+
+
+### Build and compile
+
+In order to build and compile this repository use the provided Makefile:
+
+```
+make all
+```
+
+This operation generates the binaries for this repo, download dependencies,
+run existing tests and generate ready-to-deploy Kubernetes files.
+
+### Run tests
+
+Tests are executed using Ginkgo. To run all the available tests:
+
+```
+make test
+```
+
+### Update dependencies
+
+Dependencies are managed using Godep. For an automatic dependencies download use:
+
+```
+make dep
+```
+
+In order to have all dependencies up-to-date run:
+
+```
+dep ensure -update -v
+```
+
+### Install VM
+
+As commented above, you can install a VM executing 
+
+```
+make vagrant
+```
+
+### Stop, Start, Destroy, etc the VM
+
+There are more commands to manage the virtual machine
+
+```
+make vagrant-stop
+```
+```
+make vagrant-destroy
+```
+```
+make vagrant-up
+```
+```
+make vagrant-restart-service
+```
+and
+```
+vagrant-rebuild
+```
+
+## Contributing
+
+Please read [contributing.md](contributing.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/nalej/edge-controller/tags). 
+
+## Authors
+
+See also the list of [contributors](https://github.com/nalej/edge-controller/contributors) who participated in this project.
+
+## License
+This project is licensed under the Apache 2.0 License - see the [LICENSE-2.0.txt](LICENSE-2.0.txt) file for details.
+
+
