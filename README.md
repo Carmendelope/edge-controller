@@ -22,7 +22,7 @@ a public-api command:
 ```
 ./bin/public-api-cli edgecontroller create-join-token --outputPath=_token_file_path
 ```
-2) configure the EC updating the file `configs/config.yaml`
+2) Configure the EC updating the file `configs/config.yaml`
 ```
 joinTokenPath: /tmp/joinToken.json
 useBBoltProviders: true
@@ -35,7 +35,7 @@ geolocation: "Madrid, Madrid, Spain"
 
 _The edge-controller is started!!_
 
-###Some commands that can help...
+### Some commands that can help...
 
 `vagrant ssh`: command to entry to VM
 
