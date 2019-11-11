@@ -149,23 +149,23 @@
   version = "v1.1.2"
 
 [[projects]]
-  digest = "1:1e1800b6354ac0f6c22ada1f0fbc3f086a35bc5d591a88f3a3474c7357cf483b"
+  digest = "1:1ae71fb7a60db466b1f032dee6692f61a97a8bb55676c8d1505593db50ff270a"
   name = "github.com/nalej/authx-interceptors"
   packages = [
     "pkg/interceptor/apikey",
     "pkg/interceptor/config",
   ]
   pruneopts = ""
-  revision = "f6e10135723fef56bd95b181abdb3a0410cc3bd1"
-  version = "v0.3.0"
+  revision = "f4ae6ef35a77d309dbde7fb906f92773e43180f5"
+  version = "v0.4.0"
 
 [[projects]]
-  digest = "1:0cc441f3dfe124dd74f44dd7e466dfc17cc7edff468094fbc3847a96b5ebf6f7"
+  digest = "1:b651ba0ea8155a78a3a2b23e4cc86f85c44ce62856a565632444eb418d0d960e"
   name = "github.com/nalej/derrors"
   packages = ["."]
   pruneopts = ""
-  revision = "7a6df7f0bb1c7cddfec82c91119f193f6fcbc9d5"
-  version = "v2.0.0"
+  revision = "bfc722761e86fbac74fae4f43db51901a538b72a"
+  version = "v2.1.0"
 
 [[projects]]
   digest = "1:cfdc08a44d4a20ba76521e370c464e9a3056154cbe939c8115f3f689b7eedc7a"
@@ -248,12 +248,12 @@
   version = "v0.0.56"
 
 [[projects]]
-  digest = "1:1e9ad6ea6b12a77331f1b88f99457719c2d2d09b88e8f97112edfe2c68feac38"
+  digest = "1:d3388514be7cf806b1c25193a776c089a39132d9a894cac4f2927d002203178a"
   name = "github.com/nalej/grpc-monitoring-go"
   packages = ["."]
   pruneopts = ""
-  revision = "8ee6db519ca06be0fed43f08b1dc05c74e610dbd"
-  version = "v0.0.5"
+  revision = "c2a8c0f161db818638c8e98816753d5ade5a95f0"
+  version = "v0.0.6"
 
 [[projects]]
   digest = "1:0e5100c2c9fcced5b1c0f2306742cbd44dd401cfc52a4b90678c02277fb44ac2"
@@ -272,12 +272,12 @@
   version = "v0.0.30"
 
 [[projects]]
-  digest = "1:a55e0792c0a632d14fc0f7a1c4b55ed2973189c2267d7197c2e13b1a44371466"
+  digest = "1:0261633894934ecc23f9b2551c21676dc5e89554d76aafd8ccb84aff21196799"
   name = "github.com/nalej/grpc-utils"
   packages = ["pkg/conversions"]
   pruneopts = ""
-  revision = "3763d699ec598000c8095dc4d2e86a3ec0a169ff"
-  version = "v1.3.1"
+  revision = "f47f46a9b4002710e515fe04b3287585e1736a3f"
+  version = "v1.5.0"
 
 [[projects]]
   digest = "1:caf839a4741eb24688de1e400e2a3d933542e47dbb10362ff357ba8b8094d1ac"
