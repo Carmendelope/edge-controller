@@ -14,7 +14,6 @@ vagrant: dep build-custom build-agents vagrant-up
 vagrant-rebuild: dep build-custom build-agents vagrant-restart-service
 
 include scripts/Makefile.golang
-include scripts/Makefile.azure
 include scripts/Makefile.k8s
 include scripts/Makefile.docker
 include scripts/Makefile.vagrant
