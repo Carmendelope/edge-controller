@@ -8,6 +8,9 @@
   "image_list": [
     "edge-controller"
   ],
+  "component_list": [
+    ""
+  ],
   "tools": [
     "k8s",
     "docker",
